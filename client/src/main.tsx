@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppShell from './app/AppShell';
 import Forecast from './routes/Forecast';
@@ -13,22 +13,31 @@ import './theme.css';
 
 const qc = new QueryClient();
 
+const router = createBrowserRouter([
+  {
+    element: <AppShell />,
+    children: [
+      { index: true, element: <Navigate to="/forecast" replace /> },
+      { path: '/forecast', element: <Forecast /> },
+      { path: '/production', element: <Production /> },
+      { path: '/montage', element: <Montage /> },
+      { path: '/sales', element: <Sales /> },
+      { path: '/kpis', element: <KPIs /> },
+      { path: '/settings', element: <Settings /> },
+    ],
+  },
+], {
+  // future flags to align with upcoming React Router v7 behaviors
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  },
+} as any);
+
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={qc}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppShell />}> 
-            <Route index element={<Navigate to="/forecast" replace />} />
-            <Route path="/forecast" element={<Forecast />} />
-            <Route path="/production" element={<Production />} />
-            <Route path="/montage" element={<Montage />} />
-            <Route path="/sales" element={<Sales />} />
-            <Route path="/kpis" element={<KPIs />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <RouterProvider router={router} future={{ v7_startTransition: true, v7_relativeSplatPath: true } as any} />
     </QueryClientProvider>
   </React.StrictMode>
 );

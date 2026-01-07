@@ -10,6 +10,7 @@ function EmployeesPanel() {
   const qc = useQueryClient();
   const toast = useToast();
   const [editing, setEditing] = useState<{ id: string; name: string; role: string; weeklyHours: number; daysMask: number; active: boolean; color?: string } | null>(null);
+  const invalid = editing ? (!editing.name?.trim() || !editing.role?.trim() || editing.weeklyHours < 0) : false;
   const save = useMutation({
     mutationFn: async () => {
       if (!editing) return;
@@ -93,7 +94,7 @@ function EmployeesPanel() {
           </label>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="secondary" onClick={()=>setEditing(null)} disabled={save.isPending}>Abbrechen</button>
-            <button onClick={()=>save.mutate()} disabled={save.isPending}>Speichern</button>
+            <button onClick={()=>save.mutate()} disabled={save.isPending || invalid}>Speichern</button>
           </div>
         </div>
       )}
@@ -107,6 +108,7 @@ function BlockersPanel() {
   const qc = useQueryClient();
   const toast = useToast();
   const [editing, setEditing] = useState<{ id: string; employeeId: string; dateIso: string; overnight: boolean; reason?: string } | null>(null);
+  const invalid = editing ? (!editing.employeeId || !editing.dateIso) : false;
   const save = useMutation({
     mutationFn: async () => {
       if (!editing) return;
@@ -178,7 +180,7 @@ function BlockersPanel() {
           </label>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="secondary" onClick={()=>setEditing(null)} disabled={save.isPending}>Abbrechen</button>
-            <button onClick={()=>save.mutate()} disabled={save.isPending}>Speichern</button>
+            <button onClick={()=>save.mutate()} disabled={save.isPending || invalid}>Speichern</button>
           </div>
         </div>
       )}
