@@ -39,6 +39,11 @@ function SalesFilters({ search, setSearch, status, setStatus, onlyDelayed, setOn
   );
 }
 
+function StatusBadge({ status }: { status: string }) {
+  const tone = status === 'delivered' ? 'var(--ok)' : status === 'canceled' ? 'var(--muted)' : 'var(--accent)';
+  return <span className="badge" style={{ background: tone, color: '#111' }}>{status}</span>;
+}
+
 function SalesTable({ rows, onSelect, selectedId }: { rows: any[]; onSelect: (id: string) => void; selectedId?: string }) {
   if (!rows.length) return <div className="kpi-card">Keine Orders im Zeitraum</div>;
   return (
@@ -68,7 +73,7 @@ function SalesTable({ rows, onSelect, selectedId }: { rows: any[]; onSelect: (id
               <div style={{ fontWeight: 600 }}>{o.customer ?? 'Unbekannt'}</div>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>#{o.ext_id ?? o.id}</div>
             </div>
-            <span>{o.status}</span>
+            <span><StatusBadge status={o.status} /></span>
             <span>{o.forecast_date ?? '–'}</span>
             <span>{o.sum_total ? o.sum_total.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) : '–'}</span>
           </button>
