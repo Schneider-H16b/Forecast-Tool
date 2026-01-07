@@ -1,9 +1,42 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '../../store/uiStore';
+import { importCsv } from '../../api/import';
+import { useToast } from '../../store/toastStore';
 
 export default function ForecastSidebar() {
   const f = useUIStore(s=>s.forecast);
   const setF = useUIStore(s=>s.setForecast);
+  const toast = useToast();
+  const qc = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const importMutation = useMutation({
+    mutationFn: async (csvText: string) => {
+      return importCsv(csvText, 'forecast-ui');
+    },
+    onSuccess: (data) => {
+      toast.success(`Importiert: ${data.imported} Orders, ${data.skipped} übersprungen`);
+      qc.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (e: Error) => {
+      toast.error(`Import fehlgeschlagen: ${e.message}`);
+    },
+  });
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      if (text) importMutation.mutate(text);
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
   function toggleStatus(st: string){
     const has = f.statuses.includes(st);
     const next = has ? f.statuses.filter(x=>x!==st) : [...f.statuses, st];
@@ -44,7 +77,16 @@ export default function ForecastSidebar() {
       </div>
       <div>
         <h3>Aktionen</h3>
-        <button className="btn">CSV importieren</button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+        <button className="btn" onClick={() => fileInputRef.current?.click()} disabled={importMutation.isPending}>
+          {importMutation.isPending ? 'Importiere…' : 'CSV importieren'}
+        </button>
         <div style={{height:6}}/>
         <button className="btn">AutoPlan (alle)</button>
         <div style={{height:6}}/>

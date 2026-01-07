@@ -125,6 +125,52 @@ export class OrdersRepoSqlite implements OrdersRepo {
     return { ...order, lines };
   }
 
+  async getOrderByExtId(extId: string): Promise<Order | null> {
+    const rows = this.adapter.query('SELECT * FROM orders WHERE ext_id = ?', [extId]) as Array<Record<string, unknown>>;
+    return rows.length > 0 ? this.rowToOrder(rows[0]) : null;
+  }
+
+  async createOrder(order: Order): Promise<void> {
+    this.adapter.run(
+      `INSERT INTO orders (id, ext_id, customer, status, forecast_date, sum_total, delivered_ratio, created_at, updated_at, import_id, distance_km, forecast_miss, miss_days)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        order.id,
+        order.ext_id || null,
+        order.customer || null,
+        order.status,
+        order.forecast_date || null,
+        order.sum_total || null,
+        order.delivered_ratio || null,
+        order.created_at || new Date().toISOString(),
+        order.updated_at || new Date().toISOString(),
+        order.import_id || null,
+        order.distance_km || 0,
+        order.forecast_miss || 0,
+        order.miss_days || 0,
+      ]
+    );
+    await this.adapter.saveToFile();
+  }
+
+  async createOrderLine(line: OrderLine): Promise<void> {
+    this.adapter.run(
+      `INSERT INTO order_lines (id, order_id, sku, qty, unit_price, delivered_qty, delivery_date, raw_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        line.id,
+        line.order_id,
+        line.sku || null,
+        line.qty,
+        line.unit_price || null,
+        line.delivered_qty || null,
+        line.delivery_date || null,
+        line.raw_json || null,
+      ]
+    );
+    await this.adapter.saveToFile();
+  }
+
   async updateOrderMeta(orderId: string, meta: { distanceKm?: number; forecast_miss?: number; miss_days?: number }): Promise<void> {
     const updates: string[] = [];
     const params: Array<number|string> = [];
