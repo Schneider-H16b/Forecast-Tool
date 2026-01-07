@@ -1,0 +1,21 @@
+# Node
+node_modules/
+dist/
+.env
+.env.*
+
+# VSCode
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# Mac
+.DS_Store
+
+# SQLite DB
+*.db
+
+# Build
+/build
