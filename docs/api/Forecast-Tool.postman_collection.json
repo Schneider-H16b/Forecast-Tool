@@ -1,0 +1,121 @@
+{
+  "info": {
+    "name": "Forecast-Tool API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "List events",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/events"
+      }
+    },
+    {
+      "name": "Create event",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"kind\": \"production\",\n  \"orderId\": \"ORDER-123\",\n  \"startDate\": \"2026-01-08\",\n  \"endDate\": \"2026-01-08\",\n  \"totalMinutes\": 240,\n  \"travelMinutes\": 0,\n  \"employeeIds\": [\"emp-1\"]\n}"
+        },
+        "url": "{{baseUrl}}/api/events"
+      }
+    },
+    {
+      "name": "Update event",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"kind\": \"production\",\n  \"orderId\": \"ORDER-123\",\n  \"startDate\": \"2026-01-09\",\n  \"endDate\": \"2026-01-09\",\n  \"totalMinutes\": 300,\n  \"travelMinutes\": 0,\n  \"employeeIds\": [\"emp-1\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/events/<ID>",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events", "<ID>"]
+        }
+      }
+    },
+    {
+      "name": "Delete event",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/api/events/<ID>",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events", "<ID>"]
+        }
+      }
+    },
+    {
+      "name": "Capacity",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/capacity?kind=production&date=2026-01-08",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "capacity"],
+          "query": [
+            {"key": "kind", "value": "production"},
+            {"key": "date", "value": "2026-01-08"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Run AutoPlan",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"startDate\": \"2026-01-08\",\n  \"endDate\": \"2026-01-31\",\n  \"includeProduction\": true,\n  \"includeMontage\": true,\n  \"overwriteExisting\": false\n}"
+        },
+        "url": "{{baseUrl}}/api/autoplan/run"
+      }
+    },
+    {
+      "name": "Dashboard metrics",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/dashboard/metrics?from=2026-01-01&to=2026-01-31",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "dashboard", "metrics"],
+          "query": [
+            {"key": "from", "value": "2026-01-01"},
+            {"key": "to", "value": "2026-01-31"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dashboard KPIs",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/dashboard/kpis?from=2026-01-01&to=2026-01-31",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "dashboard", "kpis"],
+          "query": [
+            {"key": "from", "value": "2026-01-01"},
+            {"key": "to", "value": "2026-01-31"}
+          ]
+        }
+      }
+    }
+  ]
+}

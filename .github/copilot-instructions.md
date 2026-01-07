@@ -1,62 +1,87 @@
 # Copilot Instructions for Forecast-Tool
 
 Purpose
-- Short, actionable guidance to help AI coding agents be immediately productive in this repository.
+- Short, actionable guidance so AI coding agents can be productive in this repository immediately.
 
-Quick summary
-- I couldn't find an existing `README.md` or other AGENT/AI instruction files in the repo; this is a starter file. Please update the placeholders below with project-specific commands and file paths.
+Big picture
+- Monorepo with server (Node/Express/TypeScript) and client (Vite/React). Persistence via SQLite (sql.js) with a v7 schema. Repos + services architecture, Vitest for tests, ESLint-clean TypeScript.
+- Data flow: CSV import → normalized orders/items → planning (events, capacity) → AutoPlan → KPIs/Dashboard.
 
-Big picture (what to look for) ✅
-- Typical components:
-  - `data/` or `datasets/` — raw & processed input pipelines and schema definitions
-  - `src/` or `app/` — service code: training, forecasting, API endpoints
-  - `models/` or `artifacts/` — saved model binaries or weights
-  - `cli/` — command-line utilities for ETL, training or evaluation
-  - `tests/` — unit/integration tests
-- Data flow to check: ingestion -> preprocessing -> model training -> model export -> inference/API
-- If the repository uses multiple services, identify the boundary between `training` (batch) and `serving` (online/HTTP) components.
+Repo layout
+- server/ — Express app, repos, services, routes, tests
+- client/ — Vite React app (UI for planning/KPIs)
+- docs/schema.sql — authoritative DB schema (v7)
+- data/ — CSV samples or local data files (optional)
 
-Developer workflows (concrete, replace placeholders) 🔧
-- Setup: document exact commands to install deps and set up envs. Example placeholders:
-  - Windows/Powershell: `python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt`
-  - Container: `docker build -t forecast-tool . && docker run -it forecast-tool`
-- Run tests: provide exact test command. Example: `pytest tests/ -q` (replace with project's test invocation)
-- Run local API: `uvicorn src.api.app:app --reload --port 8000` or `flask run` depending on framework
-- Training/inference commands: `python src/train.py --config configs/train.yaml` and `python src/infer.py --model models/latest.pkl --input data/sample.csv`
-- Common debug steps: run small subset of dataset (`--sample 100`), use logging at DEBUG level, run tests for one module (`pytest tests/test_thing.py::TestFoo -q`)
+Developer workflows
+- Prereqs: Node 18+ (LTS), npm (workspaces enabled), Windows PowerShell or bash. On Windows, prefer PowerShell.
 
-Project-specific conventions to document here (examples to replace) 📋
-- File naming: `snake_case` Python modules, `CamelCase` class names, test files named `test_*.py`.
-- Config: YAML under `configs/` with environment overrides via `ENV_` variables; secrets via OS env only.
-- Data schema: expected CSV columns and types found in `data/schema.yml` or `src/data/schema.py` (add exact path)
-- Model artifacts: saved as `models/<model_name>_<YYYYMMDD>.pkl` or in `artifacts/` S3 path—state exact location
+Workspace scripts (run at repo root)
+- Install: `npm install`
+- Dev (client + server): `npm run dev`
+- Build all: `npm run build`
+- Start backend only (built): `npm run start`
+- Test all (workspaces): `npm test`
+- Lint all (workspaces): `npm run lint`
+- Typecheck: `npm run typecheck`
 
-Integration & external systems 🔗
-- Databases: note connection patterns (SQLAlchemy URI in `src/db.py` or `alembic.ini`) and migration usage.
-- Storage: local filesystem vs S3/GCS. Example: `S3_BUCKET` env var used by `src/storage.py`.
-- External APIs: list service endpoints and auth method (API key, OAuth, etc.) and where keys are read from (env file or secret manager).
+Server (backend) scripts
+- Dev: `npm run dev --prefix ./server`
+- Build: `npm run build --prefix ./server`
+- Start: `npm start --prefix ./server`
+- Test: `npm test --prefix ./server`
+- Lint: `npm run lint --prefix ./server`
 
-Patterns & anti-patterns to preserve
-- Prefer deterministic preprocessing pipelines with fixed seeds (look for `random.seed` / `numpy.random.seed` usage)
-- Tests should be fast and not rely on real external services; use recorded responses or test fixtures located under `tests/fixtures/`
-- For large-data operations, prefer streaming or chunked processing to avoid OOM
+Client (frontend) scripts
+- Dev: `npm run dev --prefix ./client` (Vite default port 5173)
+- Build: `npm run build --prefix ./client`
+- Preview: `npm run preview --prefix ./client`
+- Test: `npm test --prefix ./client`
+- Lint: `npm run lint --prefix ./client`
 
-What AI agents are allowed & expected to do ✅
-- Make small, well-tested changes with accompanying unit tests and clear commit messages.
-- Add TODOs when required info is missing and raise PR comments stating the assumption.
-- Do not commit secrets, credentials, or large model binaries (>50MB). Upload large artifacts to artifact storage and reference with metadata.
+Database & migrations
+- SQLite is embedded via sql.js. Default DB path: `server/dev.db` (created on first run).
+- Schema lives in `docs/schema.sql` and is applied by the DB initializer.
+- Migration CLI (from localStorage dump to DB):
+  - Dry-run: `npm run migrate --prefix ./server -- --dump server/example-localstorage-dump.json --dry-run`
+  - Apply: `npm run migrate --prefix ./server -- --dump server/example-localstorage-dump.json --no-dry-run`
+  - Options: `--db <path>` to set DB file; backups auto-created when applying if enabled.
 
-Items I need you to fill in (placeholders you should edit) ⚠️
-- Exact install command(s)
-- Exact test command(s)
-- Static paths to important files: main app file, training script, schema file, model artifact location
-- Any non-standard steps (e.g., database migrations, pretraining data downloads, special env vars)
+Import pipeline (server)
+- Import CSV orders: call the ImportService via an API/CLI if present, or add a thin script invoking `ImportRepoSqlite` and `ImportService`.
+- Deduping via content-hash; re-import is idempotent.
 
-How to update this file
-- If this file exists, merge changes by preserving specific commands and examples, and move to the top-level `README.md` if content overlaps.
+Key APIs (server)
+- Health: `GET /health`
+- Planning:
+  - `GET /api/events`
+  - `POST /api/events`
+  - `PUT /api/events/:id`
+  - `DELETE /api/events/:id`
+  - Capacity: `GET /api/capacity?kind=production|montage&date=YYYY-MM-DD`
+- AutoPlan: `POST /api/autoplan/run`
+- Dashboard:
+  - `GET /api/dashboard/metrics?from=YYYY-MM-DD&to=YYYY-MM-DD`
+  - `GET /api/dashboard/kpis?from=YYYY-MM-DD&to=YYYY-MM-DD`
+
+Conventions
+- TypeScript strict; avoid `any`. Align types to DB snake_case fields.
+- Tests: Vitest; keep unit tests fast and deterministic. Use fixtures under `server/test`.
+- Repositories under `server/src/repos/**`; services under `server/src/services/**`.
+
+Troubleshooting
+- PowerShell chaining: use `;` instead of `&&`.
+- If sqlite adapter complains about readonly arrays, ensure parameter arrays are mutable and of allowed SqlValue types.
+- KPI rounding: tests expect rounding to nearest integer for selected metrics.
+
+What agents should do
+- Small, focused PRs with tests when changing logic in repos/services.
+- Use the migration CLI when schema/setting changes are needed; update `docs/schema.sql` and add tests.
+- Do not commit large binaries (>50MB) or secrets.
+
+Maintainer notes
+- Backend port defaults via environment `PORT` (if set by index/start). DB path defaults to `server/dev.db` and can be overridden in code via `initDB({ dbPath })`.
+- TypeScript pinned to 5.3.x across workspaces.
 
 Contact & feedback
-- If something in this file is incorrect or incomplete, please add a short note at the top of the file and/or invite AI agents to open a short PR that adds missing commands and small tests.
-
----
-*Generated as a starter; please replace the placeholder snippets with exact commands and file paths from this repository.*
+- If anything here is incorrect or missing, please open a PR updating commands and, if logic changed, add minimal tests.

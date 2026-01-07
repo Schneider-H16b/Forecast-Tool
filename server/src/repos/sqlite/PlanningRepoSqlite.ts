@@ -102,27 +102,27 @@ export class PlanningRepoSqlite implements PlanningRepo {
 
     sql += ' ORDER BY start_date ASC';
 
-    const rows = this.adapter.query(sql, params);
+    const rows = this.adapter.query(sql, params) as Array<Record<string, unknown>>;
     const events: PlanEvent[] = [];
 
     for (const row of rows) {
       const empRows = this.adapter.query(
         'SELECT employee_id FROM plan_event_employees WHERE event_id = ?',
-        [row.id]
-      );
-      const employeeIds = empRows.map(r => r.employee_id);
+        [row.id as string]
+      ) as Array<Record<string, unknown>>;
+      const employeeIds = empRows.map(r => r.employee_id as string);
 
       events.push({
-        id: row.id,
-        kind: row.kind,
-        order_id: row.order_id,
-        start_date: row.start_date,
-        end_date: row.end_date,
-        total_minutes: row.total_minutes,
-        travel_minutes: row.travel_minutes,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-        source: row.source,
+        id: row.id as string,
+        kind: row.kind as string,
+        order_id: row.order_id as string,
+        start_date: row.start_date as string,
+        end_date: row.end_date as string,
+        total_minutes: (row.total_minutes as number) ?? 0,
+        travel_minutes: (row.travel_minutes as number) ?? 0,
+        created_at: row.created_at as string,
+        updated_at: row.updated_at as string,
+        source: (row.source as string) || 'manual',
         employeeIds,
       });
     }
@@ -142,8 +142,8 @@ export class PlanningRepoSqlite implements PlanningRepo {
         AND start_date <= ?
         AND end_date >= ?
     `;
-    const rows = this.adapter.query(sql, [kind, date, date]);
-    const usedMinutes = rows[0]?.used_minutes || 0;
+    const rows = this.adapter.query(sql, [kind, date, date]) as Array<Record<string, unknown>>;
+    const usedMinutes = Number(rows[0]?.used_minutes || 0);
 
     // Assume 8 hours (480 minutes) per day capacity
     const totalCapacity = 480;

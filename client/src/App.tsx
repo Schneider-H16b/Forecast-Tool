@@ -1,31 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import AppShell from './app/AppShell';
+import { ThreePanelLayout } from './app/ThreePanelLayout';
 
-function App() {
-  const [apiOk, setApiOk] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch('/health');
-        if (!res.ok) throw new Error('network');
-        const data = await res.json();
-        setApiOk(Boolean(data?.ok));
-      } catch (e) {
-        setApiOk(false);
-      }
-    };
-    check();
-  }, []);
-
+export default function App() {
+  // AppShell renders TopBar, Tabs, MonthToolbar; routes render content via Outlet
   return (
-    <div style={{fontFamily: 'system-ui, sans-serif', padding: 20}}>
-      <h1>Forecast Tool</h1>
-      <p>
-        API Status:{' '}
-        {apiOk === null ? 'Checking...' : apiOk ? '✅ API OK' : '❌ API unreachable'}
-      </p>
-    </div>
+    <AppShell>
+      <ThreePanelLayout>
+        <Outlet />
+      </ThreePanelLayout>
+    </AppShell>
   );
 }
-
-export default App;

@@ -1,6 +1,15 @@
 import type { Order, OrderLine } from '../../types';
 
-export type OrderFilter = { status?: string; from?: string; to?: string; search?: string; sort?: string };
+export type OrderFilter = {
+  status?: string; // legacy single
+  statuses?: string[]; // multi
+  from?: string;
+  to?: string;
+  search?: string;
+  onlyDelayed?: boolean;
+  onlyUnplanned?: boolean;
+  sort?: string; // e.g., 'forecast:asc'
+};
 
 export interface OrdersRepo {
   upsertOrders(orders: Array<Order>): Promise<void>;

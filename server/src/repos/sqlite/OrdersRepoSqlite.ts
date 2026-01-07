@@ -68,11 +68,13 @@ export class OrdersRepoSqlite implements OrdersRepo {
 
   async listOrders(filter?: OrderFilter): Promise<Array<Order>> {
     let sql = 'SELECT * FROM orders WHERE 1=1';
-    const params: any[] = [];
+    const params: Array<string> = [];
 
-    if (filter?.status) {
-      sql += ' AND status = ?';
-      params.push(filter.status);
+    const statuses = filter?.statuses || (filter?.status ? [filter.status] : undefined);
+    if (statuses && statuses.length) {
+      const placeholders = statuses.map(() => '?').join(',');
+      sql += ` AND status IN (${placeholders})`;
+      params.push(...statuses);
     }
     if (filter?.from) {
       sql += ' AND forecast_date >= ?';
@@ -82,30 +84,50 @@ export class OrdersRepoSqlite implements OrdersRepo {
       sql += ' AND forecast_date <= ?';
       params.push(filter.to);
     }
+    if (filter?.onlyDelayed) {
+      sql += ' AND forecast_miss = 1';
+    }
+    if (filter?.onlyUnplanned) {
+      sql += ' AND NOT EXISTS (SELECT 1 FROM plan_events pe WHERE pe.order_id = orders.id)';
+    }
     if (filter?.search) {
-      sql += ' AND (customer LIKE ? OR ext_id LIKE ?)';
+      sql += ' AND (customer LIKE ? OR ext_id LIKE ? OR id LIKE ?)';
       const search = `%${filter.search}%`;
-      params.push(search, search);
+      params.push(search, search, search);
     }
 
-    const rows = this.adapter.query(sql, params);
-    return rows.map(this.rowToOrder);
+    if (filter?.sort) {
+      const [key, dirRaw] = filter.sort.split(':');
+      const dir = (dirRaw || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+      const col = key === 'id' ? 'id'
+        : key === 'customer' ? 'customer'
+        : key === 'forecast' ? 'forecast_date'
+        : key === 'sum' ? 'sum_total'
+        : key === 'status' ? 'status'
+        : 'forecast_date';
+      sql += ` ORDER BY ${col} ${dir}`;
+    } else {
+      sql += ' ORDER BY forecast_date ASC';
+    }
+
+    const rows = this.adapter.query(sql, params) as Array<Record<string, unknown>>;
+    return rows.map((r) => this.rowToOrder(r));
   }
 
   async getOrderWithLines(orderId: string): Promise<(Order & { lines: OrderLine[] }) | null> {
-    const orderRows = this.adapter.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const orderRows = this.adapter.query('SELECT * FROM orders WHERE id = ?', [orderId]) as Array<Record<string, unknown>>;
     if (orderRows.length === 0) return null;
 
     const order = this.rowToOrder(orderRows[0]);
-    const lineRows = this.adapter.query('SELECT * FROM order_lines WHERE order_id = ?', [orderId]);
-    const lines = lineRows.map(this.rowToOrderLine);
+    const lineRows = this.adapter.query('SELECT * FROM order_lines WHERE order_id = ?', [orderId]) as Array<Record<string, unknown>>;
+    const lines = lineRows.map((r) => this.rowToOrderLine(r));
 
     return { ...order, lines };
   }
 
   async updateOrderMeta(orderId: string, meta: { distanceKm?: number; forecast_miss?: number; miss_days?: number }): Promise<void> {
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: Array<number|string> = [];
 
     if (meta.distanceKm !== undefined) {
       updates.push('distance_km = ?');
@@ -127,34 +149,34 @@ export class OrdersRepoSqlite implements OrdersRepo {
     }
   }
 
-  private rowToOrder(row: any): Order {
+  private rowToOrder(row: Record<string, unknown>): Order {
     return {
-      id: row.id,
-      ext_id: row.ext_id,
-      customer: row.customer,
-      status: row.status,
-      forecast_date: row.forecast_date,
-      sum_total: row.sum_total,
-      delivered_ratio: row.delivered_ratio,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      import_id: row.import_id,
-      distance_km: row.distance_km,
-      forecast_miss: row.forecast_miss,
-      miss_days: row.miss_days,
+      id: row.id as string,
+      ext_id: (row.ext_id as string) || undefined,
+      customer: (row.customer as string) || undefined,
+      status: row.status as string,
+      forecast_date: (row.forecast_date as string) || undefined,
+      sum_total: (row.sum_total as number) || undefined,
+      delivered_ratio: (row.delivered_ratio as number) || undefined,
+      created_at: (row.created_at as string) || undefined,
+      updated_at: (row.updated_at as string) || undefined,
+      import_id: (row.import_id as string) || undefined,
+      distance_km: (row.distance_km as number) || undefined,
+      forecast_miss: (row.forecast_miss as number) || undefined,
+      miss_days: (row.miss_days as number) || undefined,
     };
   }
 
-  private rowToOrderLine(row: any): OrderLine {
+  private rowToOrderLine(row: Record<string, unknown>): OrderLine {
     return {
-      id: row.id,
-      order_id: row.order_id,
-      sku: row.sku,
-      qty: row.qty,
-      unit_price: row.unit_price,
-      delivered_qty: row.delivered_qty,
-      delivery_date: row.delivery_date,
-      raw_json: row.raw_json,
+      id: row.id as string,
+      order_id: row.order_id as string,
+      sku: (row.sku as string) || undefined,
+      qty: row.qty as number,
+      unit_price: (row.unit_price as number) || undefined,
+      delivered_qty: (row.delivered_qty as number) || undefined,
+      delivery_date: (row.delivery_date as string) || undefined,
+      raw_json: (row.raw_json as string) || undefined,
     };
   }
 }

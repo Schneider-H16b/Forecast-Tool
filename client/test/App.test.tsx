@@ -1,19 +1,16 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import App from '../src/App';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import AppShell from '../src/app/AppShell';
 
-// Mock global fetch so the component's effect doesn't trigger network errors during tests
-beforeEach(() => {
-  // @ts-ignore - vitest provides `vi`
-  globalThis.fetch = vi.fn(() =>
-    Promise.resolve({ ok: true, json: async () => ({ ok: true }) }) as unknown as Promise<Response>
-  );
-});
-
-describe('App smoke', () => {
-  it('renders title', async () => {
-    render(<App />);
-    expect(await screen.findByText(/Forecast Tool/i)).toBeTruthy();
-    await waitFor(() => expect(screen.getByText(/API Status:/i)).toBeTruthy());
+describe('App shell', () => {
+  it('renders header and tabs', async () => {
+    render(
+      <MemoryRouter initialEntries={["/forecast"]}>
+        <AppShell />
+      </MemoryRouter>
+    );
+    expect(await screen.findByText(/Kapa-Planung • v7/i)).toBeTruthy();
+    expect(screen.getByText('Forecast')).toBeTruthy();
   });
 });

@@ -32,7 +32,7 @@ export class SqliteAdapter {
     return this.db.exec(sql);
   }
 
-  run(sql: string, params?: any[]) {
+  run(sql: string, params?: Array<string | number | null | Uint8Array>) {
     if (!this.db) throw new Error('DB not initialized');
     const stmt = this.db.prepare(sql);
     try {
@@ -42,10 +42,10 @@ export class SqliteAdapter {
     }
   }
 
-  query(sql: string, params?: any[]) {
+  query(sql: string, params?: Array<string | number | null | Uint8Array>) {
     if (!this.db) throw new Error('DB not initialized');
     const stmt = this.db.prepare(sql);
-    const rows: any[] = [];
+    const rows: Array<Record<string, unknown>> = [];
     try {
       if (params && params.length) stmt.bind(params);
       while (stmt.step()) {

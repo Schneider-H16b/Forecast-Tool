@@ -1,0 +1,59 @@
+### Health
+GET http://localhost:4000/health
+
+### List events
+GET http://localhost:4000/api/events
+
+### Create event
+POST http://localhost:4000/api/events
+Content-Type: application/json
+
+{
+  "kind": "production",
+  "orderId": "ORDER-123",
+  "startDate": "2026-01-08",
+  "endDate": "2026-01-08",
+  "totalMinutes": 240,
+  "travelMinutes": 0,
+  "employeeIds": ["emp-1"]
+}
+
+### Update event
+# Replace <ID> with a real event id from list events
+PUT http://localhost:4000/api/events/<ID>
+Content-Type: application/json
+
+{
+  "kind": "production",
+  "orderId": "ORDER-123",
+  "startDate": "2026-01-09",
+  "endDate": "2026-01-09",
+  "totalMinutes": 300,
+  "travelMinutes": 0,
+  "employeeIds": ["emp-1"]
+}
+
+### Delete event
+# Replace <ID> with a real event id
+DELETE http://localhost:4000/api/events/<ID>
+
+### Capacity (remaining minutes)
+GET http://localhost:4000/api/capacity?kind=production&date=2026-01-08
+
+### Run AutoPlan
+POST http://localhost:4000/api/autoplan/run
+Content-Type: application/json
+
+{
+  "startDate": "2026-01-08",
+  "endDate": "2026-01-31",
+  "includeProduction": true,
+  "includeMontage": true,
+  "overwriteExisting": false
+}
+
+### Dashboard metrics
+GET http://localhost:4000/api/dashboard/metrics?from=2026-01-01&to=2026-01-31
+
+### Dashboard KPIs
+GET http://localhost:4000/api/dashboard/kpis?from=2026-01-01&to=2026-01-31

@@ -2,6 +2,7 @@ import type { OrdersRepo } from '../repos/interfaces/OrdersRepo';
 import type { SettingsRepo } from '../repos/interfaces/SettingsRepo';
 import type { PlanningRepo } from '../repos/interfaces/PlanningRepo';
 import type { DashboardMetrics, KPI, KPISummary } from '../types/kpi';
+import type { Order, Employee, PlanEvent } from '../types';
 
 export class KPIService {
   constructor(
@@ -13,7 +14,6 @@ export class KPIService {
   async calculateDashboardMetrics(
     dateRange: { from: string; to: string }
   ): Promise<KPISummary> {
-    const timestamp = new Date().toISOString();
 
     // Fetch all data
     const [orders, employees, plannedEvents] = await Promise.all([
@@ -35,9 +35,9 @@ export class KPIService {
   }
 
   private computeMetrics(
-    orders: any[],
-    employees: any[],
-    events: any[],
+    orders: Order[],
+    employees: Employee[],
+    events: PlanEvent[],
     dateRange: { from: string; to: string }
   ): DashboardMetrics {
     const timestamp = new Date().toISOString();
@@ -97,7 +97,7 @@ export class KPIService {
     };
   }
 
-  private calculateForecastAccuracy(orders: any[]): number {
+  private calculateForecastAccuracy(orders: Order[]): number {
     // Accuracy: delivered on time / total delivered
     if (orders.length === 0) return 100;
     const delivered = orders.filter(o => o.status === 'delivered').length;
@@ -106,7 +106,7 @@ export class KPIService {
     return (onTime / delivered) * 100;
   }
 
-  private calculateCapacityUtilization(events: any[], activeEmployees: number): number {
+  private calculateCapacityUtilization(events: PlanEvent[], activeEmployees: number): number {
     if (activeEmployees === 0) return 0;
     // Assume 480 minutes per day per employee
     const totalCapacityMinutes = activeEmployees * 480 * 30; // 30 days
@@ -114,7 +114,7 @@ export class KPIService {
     return (totalScheduledMinutes / totalCapacityMinutes) * 100;
   }
 
-  private calculateOnTimeDeliveryRate(orders: any[]): number {
+  private calculateOnTimeDeliveryRate(orders: Order[]): number {
     if (orders.length === 0) return 100;
     const delivered = orders.filter(o => o.status === 'delivered').length;
     if (delivered === 0) return 100;
@@ -122,7 +122,7 @@ export class KPIService {
     return (onTime / delivered) * 100;
   }
 
-  private calculateAverageEventDuration(events: any[]): number {
+  private calculateAverageEventDuration(events: PlanEvent[]): number {
     if (events.length === 0) return 0;
     const totalMinutes = events.reduce((sum, e) => sum + (e.total_minutes || 0), 0);
     return totalMinutes / events.length;
