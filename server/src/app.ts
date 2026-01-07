@@ -7,6 +7,7 @@ import { planningRouter } from './routes/planning';
 import { autoPlanRouter } from './routes/autoplan';
 import { dashboardRouter } from './routes/dashboard';
 import { ordersRouter } from './routes/orders';
+import { settingsRouter } from './routes/settings';
 import { initDB } from './db/db';
 
 if (process.env.NODE_ENV !== 'test') {
@@ -33,6 +34,7 @@ app.use('/api', planningRouter);
 app.use('/api', autoPlanRouter);
 app.use('/api', dashboardRouter);
 app.use('/api', ordersRouter);
+app.use('/api', settingsRouter);
 
 // Generic error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
