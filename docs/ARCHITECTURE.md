@@ -13,5 +13,9 @@ Key decisions:
 Health endpoint:
 - GET /health -> { ok: true }
 
+Database:
+- SQLite schema and migration plan are defined in `docs/schema.sql` and `docs/MIGRATION_PLAN.md`.
+- Default adapter: `sql.js` (WASM) for browser persist to IndexedDB; optional Electron/native SQLite mode for desktop.
+
 Testing:
 - Vitest for both client and server to stay consistent.

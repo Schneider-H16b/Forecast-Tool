@@ -7,9 +7,126 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int     @id @default(autoincrement())
-  username  String  @unique
-  password  String
-  createdAt DateTime @default(now())
+model AppSetting {
+  key      String  @id
+  valueJson String
 }
+
+model Item {
+  sku             String  @id
+  name            String?
+  prodMinPerUnit  Int     @default(0)
+  montMinPerUnit  Int     @default(0)
+  active          Boolean @default(true)
+}
+
+model Employee {
+  id          String  @id @default(uuid())
+  name        String
+  role        String
+  weeklyHours Float
+  daysMask    Int
+  active      Boolean @default(true)
+  color       String?
+  blockers    Blocker[]
+  events      PlanEventEmployee[]
+}
+
+model Blocker {
+  id         String @id @default(uuid())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+  dateIso    String
+  overnight  Boolean @default(false)
+  reason     String?
+
+  @@unique([employeeId, dateIso])
+}
+
+model Import {
+  id         String @id @default(uuid())
+  source     String?
+  createdAt  DateTime
+  headerHash String?
+  linesHash  String?
+  rawMetaJson String?
+  orders     Order[]
+}
+
+model Order {
+  id           String @id
+  extId        String?
+  customer     String?
+  status       String
+  forecastDate String?
+  sumTotal     Float?
+  deliveredRatio Float?
+  createdAt    DateTime?
+  updatedAt    DateTime?
+  import       Import? @relation(fields: [importId], references: [id])
+  importId     String?
+  distanceKm   Float? @default(0)
+  forecastMiss Int? @default(0)
+  missDays     Int? @default(0)
+  lines        OrderLine[]
+  events       PlanEvent[]
+}
+
+model OrderLine {
+  id          String @id
+  order       Order  @relation(fields: [orderId], references: [id])
+  orderId     String
+  sku         String?
+  qty         Float @default(0)
+  unitPrice   Float?
+  deliveredQty Float?
+  deliveryDate String?
+  rawJson     String?
+}
+
+model PlanEvent {
+  id            String   @id @default(uuid())
+  kind          String
+  order         Order    @relation(fields: [orderId], references: [id])
+  orderId       String
+  startDate     String
+  endDate       String
+  totalMinutes  Int
+  travelMinutes Int     @default(0)
+  createdAt     DateTime
+  updatedAt     DateTime
+  source        String
+  employees     PlanEventEmployee[]
+}
+
+model PlanEventEmployee {
+  event     PlanEvent @relation(fields: [eventId], references: [id])
+  eventId   String
+  employee  Employee  @relation(fields: [employeeId], references: [id])
+  employeeId String
+
+  @@id([eventId, employeeId])
+}
+
+model AutoplanRun {
+  id         String @id @default(uuid())
+  createdAt  DateTime
+  paramsJson String
+  summaryJson String
+  issues     AutoplanIssue[]
+}
+
+model AutoplanIssue {
+  id         String @id @default(uuid())
+  run        AutoplanRun @relation(fields: [runId], references: [id])
+  runId      String
+  type       String
+  order      Order? @relation(fields: [orderId], references: [id])
+  orderId    String?
+  dateIso    String?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+  employeeId String?
+  deficitMin Int?
+  detailsJson String?
+}
+
