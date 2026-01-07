@@ -41,12 +41,41 @@ function EmployeesPanel() {
           </label>
           <label>
             <span>Rolle</span>
-            <input value={editing.role} onChange={(e)=>setEditing({ ...editing, role: e.target.value })} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select value={editing.role} onChange={(e)=>setEditing({ ...editing, role: e.target.value })}>
+                <option value="production">production</option>
+                <option value="montage">montage</option>
+                <option value="other">other</option>
+              </select>
+              <input value={editing.role} onChange={(e)=>setEditing({ ...editing, role: e.target.value })} />
+            </div>
           </label>
           <label>
             <span>Wochenstunden</span>
             <input type="number" value={editing.weeklyHours} onChange={(e)=>setEditing({ ...editing, weeklyHours: Number(e.target.value) })} />
           </label>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Arbeitstage</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {['Mo','Di','Mi','Do','Fr','Sa','So'].map((label, idx) => {
+                const bit = 1 << idx;
+                const checked = (editing.daysMask & bit) === bit;
+                return (
+                  <label key={label} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const newMask = checked ? (editing.daysMask & ~bit) : (editing.daysMask | bit);
+                        setEditing({ ...editing, daysMask: newMask });
+                      }}
+                    />
+                    <span>{label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
           <label>
             <span>Aktiv</span>
             <input type="checkbox" checked={editing.active} onChange={(e)=>setEditing({ ...editing, active: e.target.checked })} />
