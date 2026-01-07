@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ThreePanelLayout } from '../app/ThreePanelLayout';
-import { useEmployees, useBlockers } from '../hooks/useSettings';
+import { useEmployees, useBlockers, useItems } from '../hooks/useSettings';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { upsertEmployee, upsertBlocker, deleteBlocker } from '../api/settings';
+import { upsertEmployee, upsertBlocker, deleteBlocker, upsertItem } from '../api/settings';
 
 function EmployeesPanel() {
   const { data: employees = [], isLoading, isError } = useEmployees();
@@ -134,7 +134,79 @@ export default function Settings() {
       sidebar={<EmployeesPanel />}
       inspector={<BlockersPanel />}
     >
-      <div className="kpi-card">Items/Global folgen später</div>
+      <ItemsPanel />
     </ThreePanelLayout>
+  );
+}
+
+function ItemsPanel() {
+  const { data: items = [], isLoading, isError } = useItems();
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<{ sku: string; name?: string; prodMinPerUnit?: number; montMinPerUnit?: number; active?: boolean } | null>(null);
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!editing || !editing.sku) return;
+      return upsertItem({
+        sku: editing.sku,
+        name: editing.name,
+        prodMinPerUnit: editing.prodMinPerUnit ?? 0,
+        montMinPerUnit: editing.montMinPerUnit ?? 0,
+        active: editing.active ?? true,
+      });
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['settings','items'] });
+      setEditing(null);
+    },
+  });
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3>Artikel</h3>
+        <button className="btn" onClick={() => setEditing({ sku: '', name: '', prodMinPerUnit: 0, montMinPerUnit: 0, active: true })}>Neu</button>
+      </div>
+      {isLoading && <div className="badge">Lade…</div>}
+      {isError && <div className="badge">Fehler beim Laden</div>}
+      <div style={{ display: 'grid', gap: 8 }}>
+        {items.map(it => (
+          <button key={it.sku} className="kpi-card" style={{ textAlign: 'left' }} onClick={() => setEditing(it)}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>{it.sku} • {it.name ?? '-'}</span>
+              <span>{it.active ? 'aktiv' : 'inaktiv'}</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Prod/Mon: {it.prodMinPerUnit ?? 0} / {it.montMinPerUnit ?? 0} min/Unit</div>
+          </button>
+        ))}
+      </div>
+      {editing && (
+        <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
+          <h4>{items.find(i=>i.sku===editing.sku)?'Bearbeiten':'Neu anlegen'}</h4>
+          <label>
+            <span>SKU</span>
+            <input value={editing.sku} onChange={(e)=>setEditing({ ...editing, sku: e.target.value })} />
+          </label>
+          <label>
+            <span>Name</span>
+            <input value={editing.name ?? ''} onChange={(e)=>setEditing({ ...editing, name: e.target.value })} />
+          </label>
+          <label>
+            <span>Prod min/Unit</span>
+            <input type="number" min={0} value={editing.prodMinPerUnit ?? 0} onChange={(e)=>setEditing({ ...editing, prodMinPerUnit: Number(e.target.value) })} />
+          </label>
+          <label>
+            <span>Mont min/Unit</span>
+            <input type="number" min={0} value={editing.montMinPerUnit ?? 0} onChange={(e)=>setEditing({ ...editing, montMinPerUnit: Number(e.target.value) })} />
+          </label>
+          <label>
+            <span>Aktiv</span>
+            <input type="checkbox" checked={editing.active ?? true} onChange={(e)=>setEditing({ ...editing, active: e.target.checked })} />
+          </label>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="secondary" onClick={()=>setEditing(null)} disabled={save.isPending}>Abbrechen</button>
+            <button onClick={()=>save.mutate()} disabled={save.isPending || !editing.sku}>Speichern</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
