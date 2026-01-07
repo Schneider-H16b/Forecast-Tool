@@ -4,6 +4,7 @@ import cors from 'cors';
 let helmet: any;
 import healthRouter from './routes/health';
 import { planningRouter } from './routes/planning';
+import { autoPlanRouter } from './routes/autoplan';
 import { initDB } from './db/db';
 
 if (process.env.NODE_ENV !== 'test') {
@@ -27,6 +28,7 @@ app.use(express.json());
 
 app.use('/health', healthRouter);
 app.use('/api', planningRouter);
+app.use('/api', autoPlanRouter);
 
 // Generic error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

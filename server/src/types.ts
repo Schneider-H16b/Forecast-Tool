@@ -6,6 +6,7 @@ export interface Order {
   customer?: string;
   status: string;
   forecast_date?: string;
+  delivery_date?: string;
   sum_total?: number;
   delivered_ratio?: number;
   created_at?: string;
@@ -14,6 +15,8 @@ export interface Order {
   distance_km?: number;
   forecast_miss?: number;
   miss_days?: number;
+  total_prod_min?: number;
+  total_mont_min?: number;
 }
 
 export interface OrderLine {
@@ -47,10 +50,10 @@ export interface Item {
 export interface Employee {
   id: string;
   name: string;
-  role: string;
-  weeklyHours: number;
-  daysMask: number;
-  active: boolean;
+  role?: string;
+  weeklyHours?: number;
+  daysMask?: number;
+  isArchived?: boolean;
   color?: string;
 }
 
@@ -84,14 +87,17 @@ export interface PlanEventEmployee {
 export interface AutoPlanRun {
   id: string;
   created_at: string;
-  config_json?: string;
-  result_json?: string;
+  params_json: string;
+  summary_json: string;
 }
 
 export interface AutoPlanIssue {
   id: string;
   run_id: string;
-  severity: string;
-  message: string;
-  context?: string;
+  type: string;
+  order_id?: string;
+  date_iso?: string;
+  employee_id?: string;
+  deficit_min?: number;
+  details_json?: string;
 }
