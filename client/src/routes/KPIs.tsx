@@ -109,6 +109,15 @@ export default function KPIs() {
     ];
   }, [data]);
 
+  const ordersBars = useMemo(() => {
+    const o = data?.metrics?.orders;
+    return [
+      { label: 'Offen', value: o?.open ?? 0 },
+      { label: 'Geliefert', value: o?.delivered ?? 0 },
+      { label: 'Summe', value: o?.total ?? 0 },
+    ];
+  }, [data]);
+
   return (
     <ThreePanelLayout
       sidebar={(
@@ -137,6 +146,7 @@ export default function KPIs() {
         {!isLoading && !isError && data && (
           <>
             <KPIBadges kpis={data.kpis} />
+            <Bars title="Orders" data={ordersBars} />
             <Bars title="Planning" data={planningBars} />
             <Bars title="Performance" data={performanceBars} />
           </>
