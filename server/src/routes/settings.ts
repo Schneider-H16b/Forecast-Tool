@@ -3,6 +3,29 @@ import { getDB } from '../db/db';
 
 export const settingsRouter = Router();
 
+// App settings (generic key/value JSON)
+settingsRouter.get('/settings/app/:key', async (req, res) => {
+  try {
+    const repo = getDB().getSettingsRepo();
+    const value = await repo.getAppSetting(req.params.key);
+    res.json({ key: req.params.key, value });
+  } catch (e) {
+    console.error('get app setting error', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+settingsRouter.put('/settings/app/:key', async (req, res) => {
+  try {
+    const repo = getDB().getSettingsRepo();
+    await repo.setAppSetting(req.params.key, req.body?.value);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('set app setting error', e);
+    res.status(400).json({ error: 'Bad request' });
+  }
+});
+
 // Employees
 settingsRouter.get('/settings/employees', async (_req, res) => {
   try {

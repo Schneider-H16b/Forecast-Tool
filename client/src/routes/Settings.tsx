@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ThreePanelLayout } from '../app/ThreePanelLayout';
 import { useEmployees, useBlockers, useItems } from '../hooks/useSettings';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { upsertEmployee, upsertBlocker, deleteBlocker, upsertItem } from '../api/settings';
+import { upsertEmployee, upsertBlocker, deleteBlocker, upsertItem, fetchAppSetting, setAppSetting } from '../api/settings';
 
 function EmployeesPanel() {
   const { data: employees = [], isLoading, isError } = useEmployees();
@@ -134,7 +134,10 @@ export default function Settings() {
       sidebar={<EmployeesPanel />}
       inspector={<BlockersPanel />}
     >
-      <ItemsPanel />
+      <div style={{ display: 'grid', gap: 12 }}>
+        <ItemsPanel />
+        <AppSettingsPanel />
+      </div>
     </ThreePanelLayout>
   );
 }
@@ -207,6 +210,47 @@ function ItemsPanel() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AppSettingsPanel() {
+  const [key, setKey] = useState('planning.example');
+  const [raw, setRaw] = useState('');
+  const [status, setStatus] = useState<string | null>(null);
+  const load = useMutation({
+    mutationFn: async () => fetchAppSetting<unknown>(key),
+    onSuccess: (val) => {
+      setRaw(JSON.stringify(val ?? null, null, 2));
+      setStatus('');
+    },
+    onError: () => setStatus('Fehler beim Laden'),
+  });
+  const save = useMutation({
+    mutationFn: async () => {
+      let val: unknown = null;
+      try { val = raw ? JSON.parse(raw) : null; } catch { throw new Error('Ungültiges JSON'); }
+      return setAppSetting(key, val);
+    },
+    onSuccess: () => setStatus('Gespeichert'),
+    onError: (e) => setStatus(String(e)),
+  });
+  return (
+    <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
+      <h3>Global Settings (JSON)</h3>
+      <label>
+        <span>Key</span>
+        <input value={key} onChange={(e)=>setKey(e.target.value)} />
+      </label>
+      <label>
+        <span>Value (JSON)</span>
+        <textarea rows={6} value={raw} onChange={(e)=>setRaw(e.target.value)} />
+      </label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button className="secondary" onClick={()=>load.mutate()} disabled={load.isPending}>Laden</button>
+        <button onClick={()=>save.mutate()} disabled={save.isPending}>Speichern</button>
+        {status && <span className="badge">{status}</span>}
+      </div>
     </div>
   );
 }

@@ -82,3 +82,20 @@ export async function upsertItem(item: ItemDto) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return await res.json();
 }
+
+export async function fetchAppSetting<T = unknown>(key: string) {
+  const res = await fetch(`${API_BASE}/api/settings/app/${encodeURIComponent(key)}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json() as { key: string; value: T };
+  return json.value;
+}
+
+export async function setAppSetting(key: string, value: unknown) {
+  const res = await fetch(`${API_BASE}/api/settings/app/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
