@@ -13,8 +13,9 @@ let importRepo: ImportRepoSqlite | null = null;
 let planningRepo: PlanningRepoSqlite | null = null;
 
 export async function initDB(options?: { dbPath?: string; schemaPath?: string }) {
-  const dbPath = options?.dbPath || path.join(process.cwd(), 'server', 'dev.db');
-  const schemaPath = options?.schemaPath || path.join(process.cwd(), 'docs', 'schema.sql');
+  const cwd = process.cwd();
+  const dbPath = options?.dbPath || path.join(cwd, cwd.endsWith(path.sep + 'server') ? 'dev.db' : path.join('server', 'dev.db'));
+  const schemaPath = options?.schemaPath || path.join(cwd, cwd.endsWith(path.sep + 'server') ? path.join('..', 'docs', 'schema.sql') : path.join('docs', 'schema.sql'));
   const schema = fs.existsSync(schemaPath) ? fs.readFileSync(schemaPath, 'utf8') : undefined;
 
   adapter = new SqliteAdapter(dbPath);
