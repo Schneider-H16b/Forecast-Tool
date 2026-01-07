@@ -2,9 +2,15 @@ import fs from 'fs';
 import path from 'path';
 import { SqliteAdapter } from './sqliteAdapter';
 import { SettingsRepoSqlite } from '../repos/sqlite/SettingsRepoSqlite';
+import { OrdersRepoSqlite } from '../repos/sqlite/OrdersRepoSqlite';
+import { ImportRepoSqlite } from '../repos/sqlite/ImportRepoSqlite';
+import { PlanningRepoSqlite } from '../repos/sqlite/PlanningRepoSqlite';
 
 let adapter: SqliteAdapter | null = null;
 let settingsRepo: SettingsRepoSqlite | null = null;
+let ordersRepo: OrdersRepoSqlite | null = null;
+let importRepo: ImportRepoSqlite | null = null;
+let planningRepo: PlanningRepoSqlite | null = null;
 
 export async function initDB(options?: { dbPath?: string; schemaPath?: string }) {
   const dbPath = options?.dbPath || path.join(process.cwd(), 'server', 'dev.db');
@@ -14,6 +20,9 @@ export async function initDB(options?: { dbPath?: string; schemaPath?: string })
   adapter = new SqliteAdapter(dbPath);
   await adapter.init(schema);
   settingsRepo = new SettingsRepoSqlite(adapter);
+  ordersRepo = new OrdersRepoSqlite(adapter);
+  importRepo = new ImportRepoSqlite(adapter);
+  planningRepo = new PlanningRepoSqlite(adapter);
 }
 
 export function getAdapter() {
@@ -24,4 +33,29 @@ export function getAdapter() {
 export function getSettingsRepo() {
   if (!settingsRepo) throw new Error('DB not initialized');
   return settingsRepo;
+}
+
+export function getOrdersRepo() {
+  if (!ordersRepo) throw new Error('DB not initialized');
+  return ordersRepo;
+}
+
+export function getImportRepo() {
+  if (!importRepo) throw new Error('DB not initialized');
+  return importRepo;
+}
+
+export function getPlanningRepo() {
+  if (!planningRepo) throw new Error('DB not initialized');
+  return planningRepo;
+}
+
+export function getDB() {
+  return {
+    getAdapter,
+    getSettingsRepo,
+    getOrdersRepo,
+    getImportRepo,
+    getPlanningRepo,
+  };
 }

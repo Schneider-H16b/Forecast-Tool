@@ -1,4 +1,4 @@
-import type { PlanEvent } from '../types';
+import type { PlanEvent } from '../../types';
 
 export interface PlanEventInput {
   id?: string;
@@ -17,5 +17,5 @@ export interface PlanningRepo {
   updateEvent(event: PlanEventInput): Promise<void>;
   deleteEvent(eventId: string): Promise<void>;
   listEvents(kind?: string, dateRange?: { from: string; to: string }): Promise<Array<PlanEvent>>;
-  getRemainingCapacity(kind: string, date: string, employeeIds?: string[]): Promise<number>;
+  getRemainingCapacity(kind: string, date: string): Promise<number>;
 }

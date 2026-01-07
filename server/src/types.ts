@@ -68,14 +68,17 @@ export interface PlanEvent {
   order_id: string;
   start_date: string;
   end_date: string;
-  effort_min: number;
-  notes?: string;
+  total_minutes: number;
+  travel_minutes: number;
+  created_at: string;
+  updated_at: string;
+  source: string;
+  employeeIds?: string[];
 }
 
 export interface PlanEventEmployee {
   event_id: string;
   employee_id: string;
-  assigned_min: number;
 }
 
 export interface AutoPlanRun {
