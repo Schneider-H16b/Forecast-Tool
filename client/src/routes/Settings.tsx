@@ -103,6 +103,7 @@ function EmployeesPanel() {
 
 function BlockersPanel() {
   const { data: blockers = [], isLoading, isError } = useBlockers();
+  const { data: employees = [] } = useEmployees();
   const qc = useQueryClient();
   const toast = useToast();
   const [editing, setEditing] = useState<{ id: string; employeeId: string; dateIso: string; overnight: boolean; reason?: string } | null>(null);
@@ -155,8 +156,13 @@ function BlockersPanel() {
         <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
           <h4>{blockers.find(b=>b.id===editing.id)?'Bearbeiten':'Neu'}</h4>
           <label>
-            <span>Mitarbeiter-ID</span>
-            <input value={editing.employeeId} onChange={(e)=>setEditing({ ...editing, employeeId: e.target.value })} />
+            <span>Mitarbeiter</span>
+            <select value={editing.employeeId} onChange={(e)=>setEditing({ ...editing, employeeId: e.target.value })}>
+              <option value="">Bitte wählen…</option>
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>
+              ))}
+            </select>
           </label>
           <label>
             <span>Datum</span>
