@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let helmet: any;
 import healthRouter from './routes/health';
 
