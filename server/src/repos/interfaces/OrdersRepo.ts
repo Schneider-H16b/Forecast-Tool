@@ -1,4 +1,4 @@
-import type { Order, OrderLine } from '../types';
+import type { Order, OrderLine } from '../../types';
 
 export type OrderFilter = { status?: string; from?: string; to?: string; search?: string; sort?: string };
 

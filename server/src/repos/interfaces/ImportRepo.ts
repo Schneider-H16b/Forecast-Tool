@@ -1,4 +1,4 @@
-import type { ImportMeta } from '../types';
+import type { ImportMeta } from '../../types';
 
 export interface ImportRepo {
   createImport(meta: ImportMeta): Promise<string>;

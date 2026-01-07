@@ -1,0 +1,5 @@
+{
+  "forecast.threshold": 50,
+  "forecast.autoplan": false,
+  "forecast.user": "admin"
+}

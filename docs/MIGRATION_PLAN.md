@@ -19,10 +19,21 @@ Steps:
 - Run app in SHADOW-WRITE for at least one user-flow cycle and validate parity.
 
 3) ONE-TIME MIGRATION SCRIPT
-- Script has modes: `--dry-run`, `--apply`, `--backup`.
+- Script location: `server/scripts/migrate.ts`
+- Usage:
+  ```bash
+  # Dry-run mode (default):
+  npm run migrate -- --dump path/to/localstorage.json --db path/to/dev.db
+
+  # Apply migration:
+  npm run migrate -- --dump path/to/localstorage.json --db path/to/dev.db --no-dry-run --backup
+
+  # Without backup:
+  npm run migrate -- --dump path/to/localstorage.json --db path/to/dev.db --no-dry-run --no-backup
+  ```
 - Dry-run: reads legacy keys, computes counts, checksums and shows potential conflicts (duplicate IDs, schema mismatches), but doesn't write.
 - Apply: runs migration; writes records in transaction; stores a migration summary row in `autoplan_runs` or a dedicated migrations table.
-- Backup: script should offer to backup DB file/blob before write.
+- Backup: script automatically backs up DB file before write (with timestamp).
 
 4) VALIDATION & RECONCILIATION
 - Compare checksum of sample queries across legacy read (replay) and DB: sample counts, sum of efforts per order, sample order fields.
