@@ -7,9 +7,10 @@ interface Props {
   events: PlanEventDto[];
   selection: Selection;
   onDelete?: (id: string) => void;
+  onEdit?: (ev: PlanEventDto) => void;
 }
 
-export function PlanningInspector({ kind, events, selection, onDelete }: Props) {
+export function PlanningInspector({ kind, events, selection, onDelete, onEdit }: Props) {
   if (selection.type === 'none') {
     return <div className="kpi-card">Wähle einen Tag oder Event</div>;
   }
@@ -48,6 +49,7 @@ export function PlanningInspector({ kind, events, selection, onDelete }: Props) 
         <div>Quelle: {ev.source ?? 'manual'}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button className="secondary" onClick={() => onDelete?.(ev.id)}>Löschen</button>
+          <button onClick={() => onEdit?.(ev)}>Bearbeiten</button>
         </div>
       </div>
     );

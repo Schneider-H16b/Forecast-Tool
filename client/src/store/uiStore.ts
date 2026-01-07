@@ -14,6 +14,7 @@ interface UIState {
   modal: { type: 'none' }
     | { type: 'positions'; orderId: string }
     | { type: 'assignment'; orderId: string; kind: 'production'|'montage'; date?: string }
+    | { type: 'editEvent'; event: { id: string; kind: 'production'|'montage'; order_id: string; start_date: string; end_date: string; total_minutes: number; travel_minutes: number; employeeIds?: string[] } }
     | { type: 'autoplanResult'; result: unknown };
   // Forecast filters
   forecast: {

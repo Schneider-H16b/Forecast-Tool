@@ -7,6 +7,8 @@ import { useEventsMonth } from '../hooks/useEvents';
 import { AssignmentModal } from '../features/forecast/AssignmentModal';
 import { createPlanEvent, deletePlanEvent } from '../api/events';
 import { PlanningInspector } from '../features/planning/PlanningInspector';
+import { EventEditModal } from '../features/planning/EventEditModal';
+import { useCapacityMonth } from '../hooks/useCapacity';
 
 function monthDays(monthIso: string) {
   const d = new Date(monthIso + 'T00:00:00Z');
@@ -26,13 +28,14 @@ export default function Montage() {
   const select = useUIStore((s) => s.setSelection);
   const selection = useUIStore((s) => s.selection);
 
-  const { data: orders = [] } = useOrdersList({
+  const { data: orders = [], isLoading: ordersLoading, isError: ordersError } = useOrdersList({
     monthIso: month,
     statuses: ['open'],
     onlyUnplanned: true,
     sort: 'forecast:asc',
   });
-  const { data: events = [], isLoading: eventsLoading } = useEventsMonth('montage', month);
+  const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useEventsMonth('montage', month);
+  const { data: capacity = {}, isLoading: capLoading, isError: capError } = useCapacityMonth('montage', month);
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>();
   const qc = useQueryClient();
 
@@ -75,7 +78,9 @@ export default function Montage() {
       sidebar={
         <div style={{ display: 'grid', gap: 8 }}>
           <h3>Planbare Aufträge</h3>
-          {orders.length === 0 && <div className="badge">Keine offenen Aufträge</div>}
+          {ordersLoading && <div className="badge">Lade Aufträge…</div>}
+          {ordersError && <div className="badge">Aufträge laden fehlgeschlagen</div>}
+          {!ordersLoading && !ordersError && orders.length === 0 && <div className="badge">Keine offenen Aufträge</div>}
           {orders.map((o) => (
             <button
               key={o.id}
@@ -95,15 +100,31 @@ export default function Montage() {
         await Promise.all([
           qc.invalidateQueries({ queryKey: ['events','month','montage', month] }),
         ]);
-      }} />}
+      }} onEdit={(ev) => openModal({ type: 'editEvent', event: ev })} />}
     >
       <div style={{ display: 'grid', gap: 8 }}>
         {eventsLoading && <div className="kpi-card">Lade Events…</div>}
+        {eventsError && <div className="kpi-card">Events konnten nicht geladen werden.</div>}
+        {!eventsLoading && !eventsError && events.length === 0 && (
+          <div className="kpi-card">Keine Events für diesen Monat</div>
+        )}
+        {capError && <div className="kpi-card">Kapazität konnte nicht geladen werden.</div>}
         <div className="kpi-card" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
           {days.map((d) => (
             <div key={d.iso} className={`day-cell ${d.weekday === 0 || d.weekday === 6 ? 'muted' : ''}`} style={{ border: '1px solid var(--border)', padding: 8, borderRadius: 6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <button className="link" onClick={() => select({ type: 'day', date: d.iso })}>{d.iso.slice(8)}</button>
+                {capLoading ? (
+                  <span className="badge" title="Kapazität wird geladen">…</span>
+                ) : capacity[d.iso] !== undefined ? (
+                  <span
+                    className="badge"
+                    title="Verfügbare Minuten"
+                    style={capacity[d.iso] < 0 ? { background: '#fee', color: '#a00' } : undefined}
+                  >
+                    {capacity[d.iso] < 0 ? `Überbucht ${capacity[d.iso]}m` : `Kapazität ${capacity[d.iso]}m`}
+                  </span>
+                ) : null}
                 <button
                   className="btn"
                   disabled={!selectedOrderId}
@@ -139,6 +160,9 @@ export default function Montage() {
             await createEvent.mutateAsync({ orderId: modal.orderId, date, durationHours, travelMinutes, employeeIds });
           }}
         />
+      )}
+      {modal.type === 'editEvent' && (
+        <EventEditModal event={modal.event} />
       )}
     </ThreePanelLayout>
   );
