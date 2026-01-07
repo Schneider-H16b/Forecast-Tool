@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import '../theme.css';
 import { getHealth } from '../api/client';
 import { useUIStore } from '../store/uiStore';
+import { ToastContainer } from '../ui/components/Toast';
 
 function useTheme() {
   const [dark, setDark] = useState(() => {
@@ -109,6 +110,7 @@ export default function AppShell() {
       <TopBar/>
       <TabsNav/>
       <MonthToolbar/>
+      <ToastContainer/>
       <Outlet/>
     </div>
   );

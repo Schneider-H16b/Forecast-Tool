@@ -3,19 +3,30 @@ import { ThreePanelLayout } from '../app/ThreePanelLayout';
 import { useEmployees, useBlockers, useItems } from '../hooks/useSettings';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { upsertEmployee, upsertBlocker, deleteBlocker, upsertItem, fetchAppSetting, setAppSetting } from '../api/settings';
+import { useToast } from '../store/toastStore';
 
 function EmployeesPanel() {
   const { data: employees = [], isLoading, isError } = useEmployees();
   const qc = useQueryClient();
+  const toast = useToast();
   const [editing, setEditing] = useState<{ id: string; name: string; role: string; weeklyHours: number; daysMask: number; active: boolean; color?: string } | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       if (!editing) return;
+      // Basic validation
+      if (!editing.name?.trim()) throw new Error('Name ist erforderlich');
+      if (!editing.role?.trim()) throw new Error('Rolle ist erforderlich');
+      if (editing.weeklyHours < 0) throw new Error('Wochenstunden müssen ≥ 0 sein');
       return upsertEmployee(editing);
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['settings','employees'] });
       setEditing(null);
+      toast.success('Mitarbeiter gespeichert');
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : 'Fehler beim Speichern';
+      toast.error(msg);
     },
   });
   return (
@@ -93,20 +104,32 @@ function EmployeesPanel() {
 function BlockersPanel() {
   const { data: blockers = [], isLoading, isError } = useBlockers();
   const qc = useQueryClient();
+  const toast = useToast();
   const [editing, setEditing] = useState<{ id: string; employeeId: string; dateIso: string; overnight: boolean; reason?: string } | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       if (!editing) return;
+      if (!editing.employeeId?.trim()) throw new Error('Mitarbeiter-ID ist erforderlich');
+      if (!editing.dateIso?.trim()) throw new Error('Datum ist erforderlich');
       return upsertBlocker(editing);
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['settings','blockers'] });
       setEditing(null);
+      toast.success('Blocker gespeichert');
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : 'Fehler beim Speichern';
+      toast.error(msg);
     },
   });
   const del = useMutation({
     mutationFn: async (id: string) => deleteBlocker(id),
-    onSuccess: async () => qc.invalidateQueries({ queryKey: ['settings','blockers'] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['settings','blockers'] });
+      toast.success('Blocker gelöscht');
+    },
+    onError: () => toast.error('Fehler beim Löschen'),
   });
   return (
     <div style={{ display: 'grid', gap: 8 }}>
@@ -174,10 +197,14 @@ export default function Settings() {
 function ItemsPanel() {
   const { data: items = [], isLoading, isError } = useItems();
   const qc = useQueryClient();
+  const toast = useToast();
   const [editing, setEditing] = useState<{ sku: string; name?: string; prodMinPerUnit?: number; montMinPerUnit?: number; active?: boolean } | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       if (!editing || !editing.sku) return;
+      if (!editing.sku?.trim()) throw new Error('SKU ist erforderlich');
+      if ((editing.prodMinPerUnit ?? 0) < 0) throw new Error('Prod min/Unit müssen ≥ 0 sein');
+      if ((editing.montMinPerUnit ?? 0) < 0) throw new Error('Mont min/Unit müssen ≥ 0 sein');
       return upsertItem({
         sku: editing.sku,
         name: editing.name,
@@ -189,6 +216,11 @@ function ItemsPanel() {
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['settings','items'] });
       setEditing(null);
+      toast.success('Artikel gespeichert');
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : 'Fehler beim Speichern';
+      toast.error(msg);
     },
   });
   return (
@@ -246,14 +278,14 @@ function ItemsPanel() {
 function AppSettingsPanel() {
   const [key, setKey] = useState('planning.example');
   const [raw, setRaw] = useState('');
-  const [status, setStatus] = useState<string | null>(null);
+  const toast = useToast();
   const load = useMutation({
     mutationFn: async () => fetchAppSetting<unknown>(key),
     onSuccess: (val) => {
       setRaw(JSON.stringify(val ?? null, null, 2));
-      setStatus('');
+      toast.success('Einstellung geladen');
     },
-    onError: () => setStatus('Fehler beim Laden'),
+    onError: () => toast.error('Fehler beim Laden'),
   });
   const save = useMutation({
     mutationFn: async () => {
@@ -261,8 +293,11 @@ function AppSettingsPanel() {
       try { val = raw ? JSON.parse(raw) : null; } catch { throw new Error('Ungültiges JSON'); }
       return setAppSetting(key, val);
     },
-    onSuccess: () => setStatus('Gespeichert'),
-    onError: (e) => setStatus(String(e)),
+    onSuccess: () => toast.success('Gespeichert'),
+    onError: (e) => {
+      const msg = e instanceof Error ? e.message : 'Fehler beim Speichern';
+      toast.error(msg);
+    },
   });
   return (
     <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
@@ -278,7 +313,6 @@ function AppSettingsPanel() {
       <div style={{ display: 'flex', gap: 8 }}>
         <button className="secondary" onClick={()=>load.mutate()} disabled={load.isPending}>Laden</button>
         <button onClick={()=>save.mutate()} disabled={save.isPending}>Speichern</button>
-        {status && <span className="badge">{status}</span>}
       </div>
     </div>
   );

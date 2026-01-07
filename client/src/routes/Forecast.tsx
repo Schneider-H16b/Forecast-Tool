@@ -78,7 +78,7 @@ export default function Forecast() {
         />
       )}
       {modal.type === 'autoplanResult' && (
-        <AutoPlanResultModal result={modal.result} />
+        <AutoPlanResultModal result={modal.result as any} />
       )}
     </ThreePanelLayout>
   );

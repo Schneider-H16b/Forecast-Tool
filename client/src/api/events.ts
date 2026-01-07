@@ -2,13 +2,14 @@ import { API_BASE } from './client';
 
 export interface PlanEventDto {
   id: string;
-  kind: 'production'|'montage'|string;
+  kind: 'production'|'montage';
   order_id: string;
   start_date: string;
   end_date: string;
   total_minutes: number;
   travel_minutes: number;
   source?: string;
+  employeeIds?: string[];
 }
 
 export async function fetchEventsInRange(params: { from: string; to: string; kind?: 'production'|'montage' }) {
