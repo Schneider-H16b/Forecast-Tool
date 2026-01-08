@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '../../store/uiStore';
-import { importCsv } from '../../api/import';
+import { importCsv, importDualCsv } from '../../api/import';
 import { useToast } from '../../store/toastStore';
 
 export default function ForecastSidebar() {
@@ -10,10 +10,20 @@ export default function ForecastSidebar() {
   const toast = useToast();
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const headerInputRef = useRef<HTMLInputElement>(null);
+  const positionsInputRef = useRef<HTMLInputElement>(null);
+  const [headerCsvText, setHeaderCsvText] = useState<string | undefined>(undefined);
+  const [positionsCsvText, setPositionsCsvText] = useState<string | undefined>(undefined);
 
   const importMutation = useMutation({
-    mutationFn: async (csvText: string) => {
-      return importCsv(csvText, 'forecast-ui');
+    mutationFn: async (payload: { csvText?: string; headerCsvText?: string; positionsCsvText?: string }) => {
+      if (payload.headerCsvText || payload.positionsCsvText) {
+        return importDualCsv({ headerCsvText: payload.headerCsvText, positionsCsvText: payload.positionsCsvText, source: 'forecast-ui' });
+      }
+      if (payload.csvText) {
+        return importCsv(payload.csvText, 'forecast-ui');
+      }
+      throw new Error('No CSV provided');
     },
     onSuccess: (data) => {
       toast.success(`Importiert: ${data.imported} Orders, ${data.skipped} übersprungen`);
@@ -30,11 +40,42 @@ export default function ForecastSidebar() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      if (text) importMutation.mutate(text);
+      if (text) importMutation.mutate({ csvText: text });
     };
     reader.readAsText(file);
     // Reset input so same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function handleHeaderChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) { setHeaderCsvText(undefined); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      setHeaderCsvText(text || undefined);
+    };
+    reader.readAsText(file);
+  }
+
+  function handlePositionsChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) { setPositionsCsvText(undefined); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      setPositionsCsvText(text || undefined);
+    };
+    reader.readAsText(file);
+  }
+
+  function triggerDualImport(){
+    importMutation.mutate({ headerCsvText, positionsCsvText });
+    // reset after triggering
+    setHeaderCsvText(undefined);
+    setPositionsCsvText(undefined);
+    if (headerInputRef.current) headerInputRef.current.value = '';
+    if (positionsInputRef.current) positionsInputRef.current.value = '';
   }
 
   function toggleStatus(st: string){
@@ -77,6 +118,16 @@ export default function ForecastSidebar() {
       </div>
       <div>
         <h3>Aktionen</h3>
+        <div style={{display:'grid', gap:6}}>
+          <label>Header: auftrag.csv</label>
+          <input ref={headerInputRef} type="file" accept=".csv" onChange={handleHeaderChange} />
+          <label>Positionen: auftrag_offene_positionen.csv</label>
+          <input ref={positionsInputRef} type="file" accept=".csv" onChange={handlePositionsChange} />
+          <button className="btn" onClick={triggerDualImport} disabled={importMutation.isPending || (!headerCsvText && !positionsCsvText)}>
+            {importMutation.isPending ? 'Importiere…' : 'CSV laden'}
+          </button>
+        </div>
+        <hr/>
         <input
           ref={fileInputRef}
           type="file"
@@ -85,7 +136,7 @@ export default function ForecastSidebar() {
           onChange={handleFileChange}
         />
         <button className="btn" onClick={() => fileInputRef.current?.click()} disabled={importMutation.isPending}>
-          {importMutation.isPending ? 'Importiere…' : 'CSV importieren'}
+          {importMutation.isPending ? 'Importiere…' : 'CSV importieren (einzeln)'}
         </button>
         <div style={{height:6}}/>
         <button className="btn">AutoPlan (alle)</button>
