@@ -23,7 +23,8 @@ describe('App shell', () => {
         <RouterProvider router={router} future={{ v7_startTransition: true, v7_relativeSplatPath: true } as any} />
       </QueryClientProvider>
     );
-    expect(await screen.findByText(/Kapa-Planung • v7/i)).toBeTruthy();
+    expect(await screen.findByText(/Smart Waste Forecast/i)).toBeTruthy();
+    expect(screen.getByText(/v7/i)).toBeTruthy();
     expect(screen.getByText('Forecast')).toBeTruthy();
   });
 });
