@@ -8,6 +8,7 @@ export type OrderFilter = {
   search?: string;
   onlyDelayed?: boolean;
   onlyUnplanned?: boolean;
+  onlyWithPositions?: boolean; // only orders with at least one line item
   sort?: string; // e.g., 'forecast:asc'
 };
 

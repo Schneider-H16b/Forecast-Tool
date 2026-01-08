@@ -10,9 +10,10 @@ export interface OrderDto {
   distance_km?: number;
   forecast_miss?: number;
   miss_days?: number;
+  linesCount?: number;
 }
 
-export async function fetchOrders(params: { from?: string; to?: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; sort?: string }) {
+export async function fetchOrders(params: { from?: string; to?: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; onlyWithPositions?: boolean; sort?: string }) {
   const q = new URLSearchParams();
   if (params.from) q.set('from', params.from);
   if (params.to) q.set('to', params.to);
@@ -20,6 +21,7 @@ export async function fetchOrders(params: { from?: string; to?: string; search?:
   if (params.statuses && params.statuses.length) q.set('statuses', params.statuses.join(','));
   if (params.onlyDelayed) q.set('onlyDelayed', '1');
   if (params.onlyUnplanned) q.set('onlyUnplanned', '1');
+  if (params.onlyWithPositions) q.set('onlyWithPositions', '1');
   if (params.sort) q.set('sort', params.sort);
   const res = await fetch(`${API_BASE}/api/orders?${q.toString()}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

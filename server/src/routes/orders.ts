@@ -3,10 +3,10 @@ import { getDB } from '../db/db';
 
 export const ordersRouter = Router();
 
-// GET /api/orders?status=open|delivered|canceled&from=YYYY-MM-DD&to=YYYY-MM-DD&search=...
+// GET /api/orders?status=open|delivered|canceled&from=YYYY-MM-DD&to=YYYY-MM-DD&search=...&onlyWithPositions=1
 ordersRouter.get('/orders', async (req, res) => {
   try {
-    const { status, statuses, from, to, search, onlyDelayed, onlyUnplanned, sort } = req.query as Record<string, string | undefined>;
+    const { status, statuses, from, to, search, onlyDelayed, onlyUnplanned, onlyWithPositions, sort } = req.query as Record<string, string | undefined>;
     const repo = getDB().getOrdersRepo();
     const statusList = statuses ? statuses.split(',').filter(Boolean) : undefined;
     const orders = await repo.listOrders({
@@ -17,6 +17,7 @@ ordersRouter.get('/orders', async (req, res) => {
       search,
       onlyDelayed: onlyDelayed === '1' || onlyDelayed === 'true',
       onlyUnplanned: onlyUnplanned === '1' || onlyUnplanned === 'true',
+      onlyWithPositions: onlyWithPositions === '1' || onlyWithPositions === 'true',
       sort: sort,
     });
     res.json(orders);

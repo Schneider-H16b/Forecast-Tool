@@ -66,52 +66,63 @@ export class OrdersRepoSqlite implements OrdersRepo {
     await this.adapter.saveToFile();
   }
 
-  async listOrders(filter?: OrderFilter): Promise<Array<Order>> {
-    let sql = 'SELECT * FROM orders WHERE 1=1';
-    const params: Array<string> = [];
+  async listOrders(filter?: OrderFilter): Promise<Array<Order & { linesCount?: number }>> {
+    let sql = 'SELECT o.*, COUNT(ol.id) as linesCount FROM orders o LEFT JOIN order_lines ol ON o.id = ol.order_id WHERE 1=1';
+    const params: Array<string | number> = [];
 
     const statuses = filter?.statuses || (filter?.status ? [filter.status] : undefined);
     if (statuses && statuses.length) {
       const placeholders = statuses.map(() => '?').join(',');
-      sql += ` AND status IN (${placeholders})`;
+      sql += ` AND o.status IN (${placeholders})`;
       params.push(...statuses);
     }
     if (filter?.from) {
-      sql += ' AND (forecast_date IS NULL OR forecast_date >= ?)';
+      sql += ' AND (o.forecast_date IS NULL OR o.forecast_date >= ?)';
       params.push(filter.from);
     }
     if (filter?.to) {
-      sql += ' AND (forecast_date IS NULL OR forecast_date <= ?)';
+      sql += ' AND (o.forecast_date IS NULL OR o.forecast_date <= ?)';
       params.push(filter.to);
     }
     if (filter?.onlyDelayed) {
-      sql += ' AND forecast_miss = 1';
+      sql += ' AND o.forecast_miss = 1';
     }
     if (filter?.onlyUnplanned) {
-      sql += ' AND NOT EXISTS (SELECT 1 FROM plan_events pe WHERE pe.order_id = orders.id)';
+      sql += ' AND NOT EXISTS (SELECT 1 FROM plan_events pe WHERE pe.order_id = o.id)';
     }
     if (filter?.search) {
-      sql += ' AND (customer LIKE ? OR ext_id LIKE ? OR id LIKE ?)';
+      sql += ' AND (o.customer LIKE ? OR o.ext_id LIKE ? OR o.id LIKE ?)';
       const search = `%${filter.search}%`;
       params.push(search, search, search);
+    }
+
+    // Group by order to count lines
+    sql += ' GROUP BY o.id';
+
+    // Filter by line count after grouping if needed
+    if (filter?.onlyWithPositions) {
+      sql += ' HAVING COUNT(ol.id) > 0';
     }
 
     if (filter?.sort) {
       const [key, dirRaw] = filter.sort.split(':');
       const dir = (dirRaw || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-      const col = key === 'id' ? 'id'
-        : key === 'customer' ? 'customer'
-        : key === 'forecast' ? 'forecast_date'
-        : key === 'sum' ? 'sum_total'
-        : key === 'status' ? 'status'
-        : 'forecast_date';
+      const col = key === 'id' ? 'o.id'
+        : key === 'customer' ? 'o.customer'
+        : key === 'forecast' ? 'o.forecast_date'
+        : key === 'sum' ? 'o.sum_total'
+        : key === 'status' ? 'o.status'
+        : 'o.forecast_date';
       sql += ` ORDER BY ${col} ${dir}`;
     } else {
-      sql += ' ORDER BY forecast_date ASC';
+      sql += ' ORDER BY o.forecast_date ASC';
     }
 
     const rows = this.adapter.query(sql, params) as Array<Record<string, unknown>>;
-    return rows.map((r) => this.rowToOrder(r));
+    return rows.map((r) => ({
+      ...this.rowToOrder(r),
+      linesCount: (r.linesCount as number) || 0,
+    }));
   }
 
   async getOrderWithLines(orderId: string): Promise<(Order & { lines: OrderLine[] }) | null> {

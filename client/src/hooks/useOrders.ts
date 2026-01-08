@@ -10,11 +10,11 @@ function monthToRange(monthIso?: string) {
   return { from, to };
 }
 
-export function useOrdersList({ monthIso, search, statuses, onlyDelayed, onlyUnplanned, sort }:{ monthIso?: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; sort?: string }) {
+export function useOrdersList({ monthIso, search, statuses, onlyDelayed, onlyUnplanned, onlyWithPositions, sort }:{ monthIso?: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; onlyWithPositions?: boolean; sort?: string }) {
   const { from, to } = monthToRange(monthIso);
   return useQuery<{ data: OrderDto[] }, Error, OrderDto[]>({
-    queryKey: ['orders','list', { from, to, search, statuses, onlyDelayed, onlyUnplanned, sort }],
-    queryFn: async () => ({ data: await fetchOrders({ from, to, search, statuses, onlyDelayed, onlyUnplanned, sort }) }),
+    queryKey: ['orders','list', { from, to, search, statuses, onlyDelayed, onlyUnplanned, onlyWithPositions, sort }],
+    queryFn: async () => ({ data: await fetchOrders({ from, to, search, statuses, onlyDelayed, onlyUnplanned, onlyWithPositions, sort }) }),
     select: (res)=>res.data,
   });
 }

@@ -28,10 +28,13 @@ export default function Production() {
   const select = useUIStore((s) => s.setSelection);
   const selection = useUIStore((s) => s.selection);
 
+  const [onlyWithPositions, setOnlyWithPositions] = useState(false);
+
   const { data: orders = [], isLoading: ordersLoading, isError: ordersError } = useOrdersList({
     monthIso: month,
     statuses: ['open'],
     onlyUnplanned: true,
+    onlyWithPositions,
     sort: 'forecast:asc',
   });
   const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useEventsMonth('production', month);
@@ -78,6 +81,14 @@ export default function Production() {
       sidebar={
         <div style={{ display: 'grid', gap: 8 }}>
           <h3>Planbare Aufträge</h3>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={onlyWithPositions}
+              onChange={(e) => setOnlyWithPositions(e.target.checked)}
+            />
+            <span>Nur mit Positionen</span>
+          </label>
           {ordersLoading && <div className="badge">Lade Aufträge…</div>}
           {ordersError && <div className="badge">Aufträge laden fehlgeschlagen</div>}
           {!ordersLoading && !ordersError && orders.length === 0 && <div className="badge">Keine offenen Aufträge</div>}
