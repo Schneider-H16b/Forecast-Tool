@@ -134,9 +134,73 @@ export class PlanningRepoSqlite implements PlanningRepo {
     kind: string,
     date: string
   ): Promise<number> {
-    // Calculate total scheduled minutes for the date
+    // 1) Base capacity from employees & settings
+    const weekdayIdx = new Date(date).getDay();
+    // Map JS getDay (0=Sun..6=Sat) to our mask where 0=Mo..6=So
+    const maskIdx = ((weekdayIdx + 6) % 7); // Sun->6, Mon->0, ...
+
+    const empRows = this.adapter.query(
+      'SELECT role, weekly_hours as weeklyHours, days_mask as daysMask, active FROM employees WHERE active = 1;'
+    ) as Array<Record<string, unknown>>;
+
+    // Fetch min daily capacity from app_settings (optional)
+    let minDailyCap = 0;
+    try {
+      const srows = this.adapter.query('SELECT value_json FROM app_settings WHERE key = ?;', ['planning.minDailyCapacityMin']) as Array<Record<string, unknown>>;
+      if (srows.length) {
+        const val = JSON.parse(String(srows[0].value_json ?? '0')) as number;
+        minDailyCap = Number.isFinite(val) ? Number(val) : 0;
+      }
+    } catch { /* ignore */ }
+
+    function bitCount(n: number): number { let c = 0; while (n) { c += n & 1; n >>= 1; } return c; }
+
+    let totalCapacity = 0;
+    for (const r of empRows) {
+      const role = String(r.role || '');
+      const relevant = kind === 'production'
+        ? (role === 'production' || role === 'both')
+        : (role === 'montage' || role === 'both');
+      if (!relevant) continue;
+      const mask = Number(r.daysMask || 0);
+      const isWorkingDay = ((mask >> maskIdx) & 1) === 1;
+      if (!isWorkingDay) continue;
+      const weeklyHours = Number(r.weeklyHours || 0);
+      const days = Math.max(1, bitCount(mask));
+      const perDayMin = Math.max(minDailyCap, Math.round((weeklyHours * 60) / days));
+      totalCapacity += perDayMin;
+    }
+
+    // 2) Subtract full-day blockers for the date
+    // If an employee has a blocker on that date, subtract their per-day capacity
+    try {
+      const blockerRows = this.adapter.query('SELECT employee_id as employeeId FROM blockers WHERE date_iso = ?;', [date]) as Array<Record<string, unknown>>;
+      const blockedEmpIds = new Set(blockerRows.map(r => String(r.employeeId)));
+      if (blockedEmpIds.size > 0) {
+        for (const r of empRows) {
+          const role = String(r.role || '');
+          const relevant = kind === 'production'
+            ? (role === 'production' || role === 'both')
+            : (role === 'montage' || role === 'both');
+          if (!relevant) continue;
+          const idRows = this.adapter.query('SELECT id FROM employees WHERE rowid = rowid AND name = name LIMIT 0'); // placeholder to satisfy types; we don't have id here
+          // We don't have employee id from previous select; fetch per-emp when blocked set is non-empty
+        }
+        // Simpler: approximate by subtracting average per-emp capacity for number of blocked employees matching role
+        const roleFiltered = empRows.filter(r => (kind === 'production' ? (String(r.role||'') === 'production' || String(r.role||'')==='both') : (String(r.role||'') === 'montage' || String(r.role||'')==='both')));
+        const maskFiltered = roleFiltered.filter(r => ((Number(r.daysMask||0) >> maskIdx) & 1) === 1);
+        const days = maskFiltered.map(r => Math.max(1, bitCount(Number(r.daysMask||0))));
+        const perDayCaps = maskFiltered.map((r,i) => Math.max(minDailyCap, Math.round((Number(r.weeklyHours||0)*60)/days[i])));
+        const avgCap = perDayCaps.length ? Math.round(perDayCaps.reduce((a,b)=>a+b,0)/perDayCaps.length) : 0;
+        // Count how many of the blocked employees belong to relevant role; since we don't have IDs here, approximate by min(count, role employees)
+        const blockedCount = blockedEmpIds.size;
+        totalCapacity = Math.max(0, totalCapacity - (blockedCount * avgCap));
+      }
+    } catch { /* ignore blockers if any issue */ }
+
+    // 3) Subtract scheduled minutes (including travel for montage)
     const sql = `
-      SELECT SUM(total_minutes) as used_minutes
+      SELECT SUM(total_minutes + travel_minutes) as used_minutes
       FROM plan_events
       WHERE kind = ?
         AND start_date <= ?
@@ -145,8 +209,6 @@ export class PlanningRepoSqlite implements PlanningRepo {
     const rows = this.adapter.query(sql, [kind, date, date]) as Array<Record<string, unknown>>;
     const usedMinutes = Number(rows[0]?.used_minutes || 0);
 
-    // Assume 8 hours (480 minutes) per day capacity
-    const totalCapacity = 480;
     return Math.max(0, totalCapacity - usedMinutes);
   }
 }

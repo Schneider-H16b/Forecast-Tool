@@ -26,6 +26,14 @@ export async function fetchOrders(params: { from?: string; to?: string; search?:
   return (await res.json()) as OrderDto[];
 }
 
+export async function fetchCriticalOrders(days = 14) {
+  const q = new URLSearchParams();
+  q.set('days', String(days));
+  const res = await fetch(`${API_BASE}/api/orders/critical?${q.toString()}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as any[];
+}
+
 export async function patchOrderMeta(orderId: string, patch: { distanceKm?: number; forecast_miss?: number; miss_days?: number }) {
   const res = await fetch(`${API_BASE}/api/orders/${orderId}/meta`, {
     method: 'PATCH',

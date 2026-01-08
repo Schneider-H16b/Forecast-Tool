@@ -60,6 +60,35 @@ ordersRouter.get('/orders/:id', async (req, res) => {
   }
 });
 
+// GET /api/orders/critical?days=14
+// Returns open, unplanned orders with missing/overdue forecast or forecast within N days
+ordersRouter.get('/orders/critical', async (req, res) => {
+  try {
+    const days = Number((req.query.days as string) || '14');
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const from = `${yyyy}-${mm}-${dd}`;
+    const toDate = new Date(now);
+    toDate.setDate(now.getDate() + (Number.isFinite(days) ? days : 14));
+    const to = `${toDate.getFullYear()}-${String(toDate.getMonth()+1).padStart(2,'0')}-${String(toDate.getDate()).padStart(2,'0')}`;
+
+    const repo = getDB().getOrdersRepo();
+    const orders = await repo.listOrders({
+      statuses: ['open'],
+      from,
+      to,
+      onlyUnplanned: true,
+      sort: 'forecast:asc',
+    });
+    res.json(orders);
+  } catch (err) {
+    console.error('Error listing critical orders', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // PATCH /api/orders/:id/meta { distanceKm, forecast_miss, miss_days }
 ordersRouter.patch('/orders/:id/meta', async (req, res) => {
   try {

@@ -9,6 +9,7 @@ import { dashboardRouter } from './routes/dashboard';
 import { ordersRouter } from './routes/orders';
 import { settingsRouter } from './routes/settings';
 import importRouter from './routes/import';
+import { dbRouter } from './routes/db';
 import { initDB } from './db/db';
 
 if (process.env.NODE_ENV !== 'test') {
@@ -37,6 +38,7 @@ app.use('/api', dashboardRouter);
 app.use('/api', ordersRouter);
 app.use('/api', settingsRouter);
 app.use('/api/import', importRouter);
+app.use('/api', dbRouter);
 
 // Generic error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

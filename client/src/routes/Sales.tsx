@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ThreePanelLayout } from '../app/ThreePanelLayout';
 import { useUIStore } from '../store/uiStore';
 import { useOrdersList } from '../hooks/useOrders';
+import { fetchCriticalOrders } from '../api/orders';
 import { fetchOrderDetail } from '../api/orderDetail';
 
 type StatusFilter = 'all' | 'open' | 'delivered' | 'canceled';
@@ -152,6 +153,10 @@ export default function Sales() {
     onlyUnplanned: false,
     sort: 'forecast:asc',
   });
+  const { data: critical = [], isLoading: critLoading, isError: critError } = useQuery({
+    queryKey: ['orders','critical', 14],
+    queryFn: () => fetchCriticalOrders(14),
+  });
 
   return (
     <ThreePanelLayout
@@ -159,6 +164,15 @@ export default function Sales() {
       inspector={<SalesInspector orderId={selected} />}
     >
       <div style={{ display: 'grid', gap: 12 }}>
+        <div className="kpi-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontWeight: 700 }}>Vertrieb – kritische Aufträge</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Offen, ungeplant, Forecast fehlt/überfällig oder ≤ 14 Tage</div>
+          </div>
+          <div className="badge" title="Anzahl">
+            {critLoading ? '…' : critError ? 'Fehler' : critical.length}
+          </div>
+        </div>
         {isLoading && <div className="kpi-card">Lade Orders…</div>}
         {isError && <div className="kpi-card" style={{ borderColor: 'var(--warn)' }}>Fehler beim Laden</div>}
         {!isLoading && !isError && (

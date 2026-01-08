@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '../../store/uiStore';
 import { importCsv, importDualCsv } from '../../api/import';
 import { useToast } from '../../store/toastStore';
+import { runAutoPlan } from '../../api/autoplan';
 
 export default function ForecastSidebar() {
   const f = useUIStore(s=>s.forecast);
@@ -139,9 +140,20 @@ export default function ForecastSidebar() {
           {importMutation.isPending ? 'Importiere…' : 'CSV importieren (einzeln)'}
         </button>
         <div style={{height:6}}/>
-        <button className="btn">AutoPlan (alle)</button>
+        <button className="btn" onClick={async ()=>{
+          const today = new Date();
+          const startDate = today.toISOString().slice(0,10);
+          const end = new Date(); end.setDate(today.getDate()+30);
+          const endDate = end.toISOString().slice(0,10);
+          try {
+            const res = await runAutoPlan({ startDate, endDate, includeProduction: true, includeMontage: true, overwriteExisting: false });
+            toast.success(`AutoPlan ok: ${res.createdEvents} Events, ${res.issues?.length ?? 0} Hinweise`);
+          } catch(e:any) {
+            toast.error(`AutoPlan fehlgeschlagen: ${e.message ?? e}`);
+          }
+        }}>AutoPlan (alle)</button>
         <div style={{height:6}}/>
-        <button className="btn">DB exportieren</button>
+        <button className="btn" onClick={()=>{ const base = (window as any).__API_BASE__ || ''; window.open(`${base}/api/db/export`, '_blank'); }}>DB exportieren</button>
       </div>
     </div>
   );
