@@ -18,5 +18,6 @@ describe('BI dashboard (mock)', () => {
     expect(screen.getAllByText(/On-Time Delivery/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Capacity vs Target/i)).toBeTruthy();
     expect(screen.getByText(/Orders Status Split/i)).toBeTruthy();
+    expect(screen.getByText(/Widget hinzufügen/i)).toBeTruthy();
   });
 });

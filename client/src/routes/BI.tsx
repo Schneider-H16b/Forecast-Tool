@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ResponsiveGridLayout, Layout } from 'react-grid-layout';
 import { ResponsiveLine } from '@nivo/line';
 import { ResponsiveBar } from '@nivo/bar';
@@ -6,7 +6,8 @@ import { ResponsivePie } from '@nivo/pie';
 import { ResponsiveBullet } from '@nivo/bullet';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { Card, CardHeader, CardBody, Button, KPICard, Table, type TableColumn } from '../ui/components';
+import { Card, CardHeader, CardBody, Button, KPICard, Table, type TableColumn, FormGroup, Input, Select, Badge } from '../ui/components';
+import { fetchBiDashboard, saveBiDashboard } from '../api/bi';
 
 interface Widget {
   id: string;
@@ -94,7 +95,28 @@ function WidgetFrame({ title, children }: { title: string; children: React.React
 }
 
 export default function BI() {
-  const layouts = useMemo(() => cloneLayouts(baseWidgets.map(w => w.layout)), []);
+  const [showAdd, setShowAdd] = useState(false);
+  const [draft, setDraft] = useState({ title: 'Neues Widget', type: 'kpi', metric: 'orders.open' });
+  const [widgets, setWidgets] = useState<Widget[]>(baseWidgets);
+  const [layouts, setLayouts] = useState<any>(cloneLayouts(baseWidgets.map(w => w.layout)));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const cfg = await fetchBiDashboard();
+        if (cfg && cfg.widgets?.length && cfg.layouts) {
+          setWidgets(cfg.widgets);
+          setLayouts(cfg.layouts);
+        }
+      } catch (e) {
+        setError('BI Config laden fehlgeschlagen');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const tableColumns: TableColumn<(typeof mockData.table)[number]>[] = [
     { key: 'id', header: 'SKU' },
@@ -123,11 +145,14 @@ export default function BI() {
           <p className="text-sm text-fg-secondary" style={{ margin: 0 }}>Drag/Resize Widgets – Daten aktuell mit Mock befüllt, API folgt.</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary">Widget hinzufügen</Button>
-          <Button variant="ghost">Layout zurücksetzen</Button>
+          <Button variant="secondary" onClick={() => setShowAdd(true)}>Widget hinzufügen</Button>
+          <Button variant="ghost" onClick={() => window.location.reload()}>Layout zurücksetzen</Button>
+          <Button onClick={async () => { await saveBiDashboard({ widgets, layouts }); }}>Speichern</Button>
         </div>
       </div>
 
+      {loading && <Badge variant="info">Lade BI-Konfiguration…</Badge>}
+      {error && <Badge variant="error">{error}</Badge>}
       <ResponsiveGridLayout
         className="layout"
         rowHeight={120}
@@ -137,9 +162,11 @@ export default function BI() {
         isResizable
         isDraggable
         compactType="vertical"
+        isBounded
+        preventCollision
         draggableHandle=".card-header"
       >
-        {baseWidgets.map((widget) => (
+        {widgets.map((widget) => (
           <div key={widget.id} data-grid={widget.layout}>
             {widget.type === 'kpi' && (
               <WidgetFrame title={widget.title}>
@@ -250,6 +277,47 @@ export default function BI() {
           </div>
         ))}
       </ResponsiveGridLayout>
+
+      {showAdd && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <Card style={{ width: 480 }}>
+            <CardHeader className="flex justify-between items-start">
+              <h4 style={{ margin: 0 }}>Widget hinzufügen (Mock)</h4>
+              <Button variant="ghost" onClick={() => setShowAdd(false)}>Schließen</Button>
+            </CardHeader>
+            <CardBody className="flex flex-col gap-4">
+              <FormGroup label="Titel">
+                <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+              </FormGroup>
+              <FormGroup label="Typ">
+                <Select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value })}>
+                  <option value="kpi">KPI</option>
+                  <option value="bullet">Bullet</option>
+                  <option value="line">Linie</option>
+                  <option value="bar">Balken</option>
+                  <option value="donut">Donut/Treemap</option>
+                  <option value="table">Tabelle</option>
+                </Select>
+              </FormGroup>
+              <FormGroup label="Metrik (Mock Auswahl)">
+                <Select value={draft.metric} onChange={(e) => setDraft({ ...draft, metric: e.target.value })}>
+                  <option value="orders.open">Orders offen</option>
+                  <option value="orders.delivered">Orders geliefert</option>
+                  <option value="performance.otd">On-Time Delivery</option>
+                  <option value="performance.capacity">Kapazitätsnutzung</option>
+                </Select>
+              </FormGroup>
+              <div className="flex gap-3 justify-end pt-2">
+                <Button variant="ghost" onClick={() => setShowAdd(false)}>Abbrechen</Button>
+                <Button onClick={async () => { setShowAdd(false); /* extend later with real add */ }}>Hinzufügen (Mock)</Button>
+              </div>
+              <p className="text-xs text-fg-secondary" style={{ margin: 0 }}>
+                Hinweis: Dies ist nur ein Mock-Dialog. In der nächsten Iteration speichern wir hier echte Widget-Configs und laden sie aus der DB.
+              </p>
+            </CardBody>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
