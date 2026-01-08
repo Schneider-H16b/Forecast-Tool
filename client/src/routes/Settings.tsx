@@ -166,9 +166,6 @@ function GlobalSettingsPanel() {
       </CardBody>
     </Card>
   );
-      </div>
-    </div>
-  );
 }
 
 function AutoPlanSettingsPanel() {
