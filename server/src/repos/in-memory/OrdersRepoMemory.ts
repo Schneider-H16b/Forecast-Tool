@@ -17,26 +17,45 @@ export class OrdersRepoMemory implements OrdersRepo {
     }
   }
 
-  async listOrders(filter?: OrderFilter): Promise<Array<Order>> {
+  async listOrders(filter?: OrderFilter): Promise<Array<Order & { linesCount?: number }>> {
     let result = Array.from(this.orders.values());
 
-    if (filter?.status) {
-      result = result.filter(o => o.status === filter.status);
+    const statuses = filter?.statuses || (filter?.status ? [filter.status] : undefined);
+    if (statuses && statuses.length) {
+      result = result.filter(o => statuses.includes(o.status));
     }
     if (filter?.from) {
-      result = result.filter(o => o.forecast_date && o.forecast_date >= filter.from!);
+      result = result.filter(o => !o.forecast_date || o.forecast_date >= filter.from!);
     }
     if (filter?.to) {
-      result = result.filter(o => o.forecast_date && o.forecast_date <= filter.to!);
+      result = result.filter(o => !o.forecast_date || o.forecast_date <= filter.to!);
+    }
+    if (filter?.onlyDelayed) {
+      result = result.filter(o => o.forecast_miss === 1);
+    }
+    if (filter?.onlyUnplanned) {
+      // In memory repo has no events, so just treat as all unplanned.
     }
     if (filter?.search) {
       const s = filter.search.toLowerCase();
       result = result.filter(o =>
-        o.customer?.toLowerCase().includes(s) || o.ext_id?.toLowerCase().includes(s)
+        o.customer?.toLowerCase().includes(s) || o.ext_id?.toLowerCase().includes(s) || o.id.toLowerCase().includes(s)
       );
     }
 
-    return result;
+    // compute lines count
+    const linesByOrder = new Map<string, number>();
+    for (const line of this.orderLines.values()) {
+      const c = linesByOrder.get(line.order_id) ?? 0;
+      linesByOrder.set(line.order_id, c + 1);
+    }
+
+    let mapped = result.map(o => ({ ...o, linesCount: linesByOrder.get(o.id) ?? 0 }));
+    if (filter?.onlyWithPositions) {
+      mapped = mapped.filter(o => (o.linesCount ?? 0) > 0);
+    }
+
+    return mapped;
   }
 
   async getOrderWithLines(orderId: string): Promise<(Order & { lines: OrderLine[] }) | null> {
