@@ -48,6 +48,7 @@ function TopBar() {
   return (
     <div className="topbar">
       <div className="flex items-center gap-3">
+        <img src="/logo-h16b.svg" alt="h16b" style={{ height: '40px', width: 'auto' }} />
         <div className="app-title">Smart Waste Forecast</div>
         <span className="text-xs px-2 py-1 rounded bg-h16b-accent/20 text-h16b-accent font-semibold">v7</span>
       </div>

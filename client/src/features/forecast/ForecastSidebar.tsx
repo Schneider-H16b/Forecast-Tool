@@ -5,7 +5,7 @@ import { importCsv, importDualCsv } from '../../api/import';
 import { useToast } from '../../store/toastStore';
 import { runAutoPlan } from '../../api/autoplan';
 import { downloadExportedOrders, type ExportFormat } from '../../api/export';
-import { Button, Card, CardHeader, CardBody, Badge, Input } from '../../ui/components';
+import { Button, Card, CardHeader, CardBody, Badge } from '../../ui/components';
 
 export default function ForecastSidebar() {
   const f = useUIStore(s=>s.forecast);

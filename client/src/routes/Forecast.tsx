@@ -57,7 +57,7 @@ export default function Forecast() {
       sidebar={<ForecastSidebar />}
       inspector={<OrderInspector orderId={selected.type==='order'? selected.id: undefined} />}
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <ForecastKpiCards monthStart={month} />
         <ForecastSortBar />
         {isLoading && <div className="kpi-card">Lade Orders…</div>}

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ThreePanelLayout } from '../app/ThreePanelLayout';
+import { Button, Card, CardHeader, CardBody, Badge } from '../ui/components';
 import { useAutoPlanSettings, useBlockers, useEmployees, useGlobalSettings, useItems } from '../hooks/useSettings';
 import {
   deleteBlocker,
@@ -46,34 +47,41 @@ function SettingsNav({ tab, onSelect }: { tab: Tab; onSelect: (t: Tab) => void }
     { id: 'blockers', label: 'Blocker' },
   ];
   return (
-    <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
-      <h3>Einstellungen</h3>
-      <div style={{ display: 'grid', gap: 6 }}>
+    <Card>
+      <CardHeader>
+        <h3 style={{ margin: 0 }}>Einstellungen</h3>
+      </CardHeader>
+      <CardBody className="flex flex-col gap-2">
         {tabs.map(t => (
-          <button
+          <Button
             key={t.id}
-            className={tab === t.id ? 'btn' : 'secondary'}
+            variant={tab === t.id ? 'primary' : 'ghost'}
+            size="md"
             onClick={() => onSelect(t.id)}
-            style={{ justifyContent: 'flex-start' }}
+            className="justify-start"
           >
             {t.label}
-          </button>
+          </Button>
         ))}
-      </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 
 function SettingsHelp() {
   return (
-    <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
-      <h4>Hinweise</h4>
-      <ul style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 4 }}>
-        <li>Änderungen werden sofort gespeichert.</li>
-        <li>Minutenwerte werden automatisch begrenzt.</li>
-        <li>Blocker können nach Monat gefiltert werden.</li>
-      </ul>
-    </div>
+    <Card>
+      <CardHeader>
+        <h4 style={{ margin: 0 }}>Hinweise</h4>
+      </CardHeader>
+      <CardBody>
+        <ul style={{ margin: 0, paddingLeft: 16, display: 'grid', gap: 8 }}>
+          <li>Änderungen werden sofort gespeichert.</li>
+          <li>Minutenwerte werden automatisch begrenzt.</li>
+          <li>Blocker können nach Monat gefiltert werden.</li>
+        </ul>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -100,54 +108,64 @@ function GlobalSettingsPanel() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Fehler beim Speichern'),
   });
 
-  if (isLoading) return <div className="badge">Lade…</div>;
-  if (isError) return <div className="badge">Fehler beim Laden</div>;
+  if (isLoading) return <Badge variant="info">Lade…</Badge>;
+  if (isError) return <Badge variant="error">Fehler beim Laden</Badge>;
 
   return (
-    <div className="kpi-card" style={{ display: 'grid', gap: 12, padding: 12 }}>
-      <h3>Global</h3>
-      <div className="grid" style={{ display: 'grid', gap: 10 }}>
-        <label>
-          <span>Minuten pro Arbeitstag</span>
+    <Card>
+      <CardHeader>
+        <h3 style={{ margin: 0 }}>Globale Einstellungen</h3>
+      </CardHeader>
+      <CardBody className="flex flex-col gap-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Minuten pro Arbeitstag</span>
           <input
             type="number"
             min={60}
             max={960}
             value={form?.dayMinutes ?? 480}
             onChange={(e) => setForm(f => f ? { ...f, dayMinutes: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label>
-          <span>Minimal verfügbare Kapazität pro Tag</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Minimal verfügbare Kapazität pro Tag</span>
           <input
             type="number"
             min={0}
             max={form?.dayMinutes ?? 960}
             value={form?.minCapPerDay ?? 60}
             onChange={(e) => setForm(f => f ? { ...f, minCapPerDay: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label>
-          <span>Reisegeschwindigkeit (km/h)</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Reisegeschwindigkeit (km/h)</span>
           <input
             type="number"
             min={10}
             max={200}
             value={form?.travelKmh ?? 60}
             onChange={(e) => setForm(f => f ? { ...f, travelKmh: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <label className="flex gap-3 items-center">
           <input
             type="checkbox"
             checked={form?.travelRoundTrip ?? true}
             onChange={(e) => setForm(f => f ? { ...f, travelRoundTrip: e.target.checked } : null)}
           />
-          <span>Hin- und Rückfahrt berechnen</span>
+          <span className="text-sm">Hin- und Rückfahrt berechnen</span>
         </label>
-      </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button onClick={() => save.mutate()} disabled={save.isPending || !form}>Speichern</button>
+        <div className="flex gap-3 justify-end pt-2">
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !form}>
+            Speichern
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  );
       </div>
     </div>
   );

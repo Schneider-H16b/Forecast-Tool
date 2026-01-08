@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ThreePanelLayout } from '../app/ThreePanelLayout';
+import { KPICard, DashboardGrid, Card, CardHeader, CardBody } from '../ui/components';
 import { useUIStore } from '../store/uiStore';
 import { useDashboardMetrics } from '../hooks/useDashboard';
 
@@ -14,45 +15,44 @@ function monthRange(monthStartIso: string) {
 }
 
 function KPIBadges({ kpis }: { kpis: { label: string; value: number | string; unit?: string; trend?: 'up'|'down'|'neutral'; trendPercent?: number }[] }) {
-  if (!kpis?.length) return <div className="kpi-card">Keine KPIs verfügbar</div>;
+  if (!kpis?.length) return <Card><CardBody>Keine KPIs verfügbar</CardBody></Card>;
   return (
-    <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))' }}>
+    <DashboardGrid>
       {kpis.map((k) => (
-        <div key={k.label} className="kpi-card" style={{ display: 'grid', gap: 4, padding: 12 }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{k.label}</div>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>
-            {k.value}{k.unit ? ` ${k.unit}` : ''}
-          </div>
-          {k.trend && (
-            <div style={{ fontSize: 12, color: k.trend === 'up' ? 'var(--ok)' : k.trend === 'down' ? 'var(--err)' : 'var(--muted)' }}>
-              {k.trend === 'up' ? '▲' : k.trend === 'down' ? '▼' : '■'} {k.trendPercent ?? 0}%
-            </div>
-          )}
-        </div>
+        <KPICard
+          key={k.label}
+          label={k.label}
+          value={String(k.value)}
+          unit={k.unit}
+          trend={k.trend}
+          trendPercent={k.trendPercent}
+        />
       ))}
-    </div>
+    </DashboardGrid>
   );
 }
 
 function Bars({ data, title }: { title: string; data: { label: string; value: number; unit?: string }[] }) {
   const max = Math.max(1, ...data.map(d => d.value));
   return (
-    <div className="kpi-card" style={{ padding: 12, display: 'grid', gap: 8 }}>
-      <div style={{ fontWeight: 600 }}>{title}</div>
-      <div style={{ display: 'grid', gap: 6 }}>
+    <Card>
+      <CardHeader>
+        <h4 style={{ margin: 0 }}>{title}</h4>
+      </CardHeader>
+      <CardBody className="flex flex-col gap-4">
         {data.map(d => (
-          <div key={d.label} style={{ display: 'grid', gap: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+          <div key={d.label} className="flex flex-col gap-2">
+            <div className="flex justify-between text-xs">
               <span>{d.label}</span>
               <span>{d.value}{d.unit ? ` ${d.unit}` : ''}</span>
             </div>
-            <div style={{ background: 'var(--surface)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${(d.value / max) * 100}%`, background: 'linear-gradient(90deg, var(--accent), var(--ok))' }} />
+            <div style={{ background: 'var(--bg-tertiary)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${(d.value / max) * 100}%`, background: 'var(--h16b-accent)' }} />
             </div>
           </div>
         ))}
-      </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -69,17 +69,19 @@ function Drilldown({ metrics }: { metrics: any }) {
     { label: 'On-Time Delivery', value: metrics.performance?.onTimeDeliveryRate, unit: '%' },
   ];
   return (
-    <div className="kpi-card" style={{ padding: 12 }}>
-      <div style={{ fontWeight: 600, marginBottom: 8 }}>Drilldown</div>
-      <div style={{ display: 'grid', gap: 6 }}>
+    <Card>
+      <CardHeader>
+        <h4 style={{ margin: 0 }}>Drilldown</h4>
+      </CardHeader>
+      <CardBody className="flex flex-col gap-3">
         {rows.map(r => (
-          <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+          <div key={r.label} className="flex justify-between text-sm">
             <span>{r.label}</span>
-            <span>{r.value ?? '–'}{r.unit ? ` ${r.unit}` : ''}</span>
+            <span className="font-medium">{r.value ?? '–'}{r.unit ? ` ${r.unit}` : ''}</span>
           </div>
         ))}
-      </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 

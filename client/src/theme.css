@@ -4,19 +4,22 @@
 
 /* === Design Tokens === */
 :root {
-  /* h16b Brand Colors */
-  --h16b-primary: #1a2332;        /* Dark navy (header/footer on h16b.com) */
-  --h16b-accent: #00bcd4;         /* Cyan/Turquoise (Smart Waste theme) */
-  --h16b-accent-light: #4dd0e1;   /* Lighter cyan for hovers */
-  --h16b-accent-dark: #0097a7;    /* Darker cyan for active states */
-  --h16b-secondary: #ff6b35;      /* Orange (CTA buttons) */
-  --h16b-secondary-hover: #ff8555;
+  /* h16b Brand Colors - Official Palette */
+  --h16b-primary: #000000;        /* Black */
+  --h16b-accent: #ed1c24;         /* Red (Primary accent) */
+  --h16b-accent-light: #ff4444;   /* Lighter red for hovers */
+  --h16b-accent-dark: #c41818;    /* Darker red for active states */
+  --h16b-secondary: #009bce;      /* Cyan/Turquoise (Secondary) */
+  --h16b-secondary-light: #33b3e0;
+  --h16b-secondary-dark: #007a9e;
+  --h16b-gray: #636b6e;           /* Gray */
+  --h16b-gray-light: #d0e0e3;     /* Light gray/Silver */
   
   /* Semantic Colors - Light Mode */
   --bg-primary: #ffffff;
   --bg-secondary: #f5f7fa;        /* Subtle gray like h16b sections */
   --bg-tertiary: #e8ecf1;
-  --fg-primary: #1a2332;          /* Dark navy for text */
+  --fg-primary: #1a1a1a;          /* Dark text */
   --fg-secondary: #4a5568;        /* Medium gray */
   --fg-tertiary: #718096;         /* Light gray/muted */
   
@@ -25,9 +28,9 @@
   --border-medium: #cbd5e0;
   --border-dark: #a0aec0;
   --card-bg: #ffffff;
-  --card-shadow: 0 1px 3px rgba(26, 35, 50, 0.1), 0 1px 2px rgba(26, 35, 50, 0.06);
-  --card-shadow-hover: 0 4px 6px rgba(26, 35, 50, 0.1), 0 2px 4px rgba(26, 35, 50, 0.06);
-  --card-shadow-lg: 0 10px 15px rgba(26, 35, 50, 0.1), 0 4px 6px rgba(26, 35, 50, 0.05);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --card-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
   
   /* Status Colors */
   --success: #10b981;
@@ -92,7 +95,7 @@
 /* === Dark Mode === */
 :root.dark {
   --bg-primary: #0f1419;
-  --bg-secondary: #1a2332;
+  --bg-secondary: #1a1a1a;
   --bg-tertiary: #242d3d;
   --fg-primary: #e5e7eb;
   --fg-secondary: #9ca3af;
@@ -101,14 +104,14 @@
   --border-light: #2d3748;
   --border-medium: #4a5568;
   --border-dark: #718096;
-  --card-bg: #1a2332;
+  --card-bg: #1a1a1a;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
   --card-shadow-hover: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
   --card-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3);
   
-  --h16b-accent: #4dd0e1;
-  --h16b-accent-light: #80deea;
-  --h16b-accent-dark: #26c6da;
+  --h16b-accent: #ff4444;
+  --h16b-accent-light: #ff6666;
+  --h16b-accent-dark: #c41818;
   
   --success-light: #064e3b;
   --warning-light: #78350f;
@@ -293,38 +296,50 @@ body {
 }
 
 .btn-primary {
-  background: var(--h16b-accent);
-  color: var(--h16b-primary);
-  border-color: var(--h16b-accent);
+  background: var(--h16b-gray);
+  color: white;
+  border-color: var(--h16b-gray);
   font-weight: var(--font-weight-semibold);
 }
 
 .btn-primary:hover {
-  background: var(--h16b-accent-light);
-  border-color: var(--h16b-accent-light);
+  background: #505d64;
+  border-color: #505d64;
 }
 
 .btn-secondary {
-  background: var(--h16b-secondary);
+  background: #a8b2b8;
   color: white;
-  border-color: var(--h16b-secondary);
+  border-color: #a8b2b8;
   font-weight: var(--font-weight-semibold);
 }
 
 .btn-secondary:hover {
-  background: var(--h16b-secondary-hover);
-  border-color: var(--h16b-secondary-hover);
+  background: #8c959e;
+  border-color: #8c959e;
 }
 
 .btn-danger {
-  background: var(--error);
-  color: white;
-  border-color: var(--error);
+  background: var(--h16b-gray-light);
+  color: var(--h16b-primary);
+  border-color: var(--h16b-gray-light);
 }
 
 .btn-danger:hover {
-  background: #dc2626;
-  border-color: #dc2626;
+  background: #b8c4cc;
+  border-color: #b8c4cc;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fg-primary);
+  border-color: transparent;
+  font-weight: var(--font-weight-normal);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
 }
 
 .btn-sm {

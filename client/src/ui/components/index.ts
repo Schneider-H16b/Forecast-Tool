@@ -17,4 +17,4 @@ export { KPICard, DashboardGrid } from './KPI';
 export { Table, TableEmpty } from './Table';
 export type { TableColumn } from './Table';
 
-export { useToast, ToastContainer } from './Toast';
+export { ToastContainer } from './Toast';
