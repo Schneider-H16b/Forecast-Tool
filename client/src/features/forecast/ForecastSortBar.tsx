@@ -1,5 +1,6 @@
 import React from 'react';
 import { useUIStore } from '../../store/uiStore';
+import { Button } from '../../ui/components';
 
 const buttons: Array<{ key: 'id'|'customer'|'forecast'|'sum'|'status'; label: string }> = [
   { key: 'id', label: 'Auftrag' },
@@ -20,11 +21,16 @@ export default function ForecastSortBar(){
     }
   }
   return (
-    <div style={{display:'flex', gap:8}}>
+    <div className="flex gap-2">
       {buttons.map(b=> (
-        <button key={b.key} className="btn" onClick={()=>setKey(b.key)}>
-          {b.label} {sort.key===b.key ? (sort.dir==='asc'?'↑':'↓') : ''}
-        </button>
+        <Button
+          key={b.key}
+          size="sm"
+          variant={sort.key === b.key ? 'primary' : 'ghost'}
+          onClick={() => setKey(b.key)}
+        >
+          {b.label} {sort.key === b.key ? (sort.dir === 'asc' ? '↑' : '↓') : ''}
+        </Button>
       ))}
     </div>
   );

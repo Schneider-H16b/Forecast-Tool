@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import '../theme.css';
 import { getHealth } from '../api/client';
 import { useUIStore } from '../store/uiStore';
-import { ToastContainer } from '../ui/components/Toast';
+import { ToastContainer, StatusBadge, Button } from '../ui/components';
 
 function useTheme() {
   const [dark, setDark] = useState(() => {
@@ -20,7 +20,7 @@ function useTheme() {
 }
 
 function DBStatusBadge() {
-  const [status, setStatus] = useState<'unknown'|'ok'|'error'>('unknown');
+  const [status, setStatus] = useState<'ok'|'warning'|'error'>('warning');
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -33,24 +33,33 @@ function DBStatusBadge() {
     })();
     return () => { cancel = true; };
   }, []);
-  return (
-    <span className="badge" title="DB/Server Status">
-      {status === 'ok' && <span className="status-ok">●</span>}
-      {status === 'error' && <span className="status-err">●</span>}
-      {status === 'unknown' && <span className="status-warn">●</span>}
-      <span>{status === 'ok' ? 'DB verbunden' : status === 'error' ? 'DB Fehler' : 'Prüfe…'}</span>
-    </span>
-  );
+  
+  const labels = {
+    ok: 'Verbunden',
+    warning: 'Verbinde…',
+    error: 'Fehler'
+  };
+  
+  return <StatusBadge status={status} label={labels[status]} />;
 }
 
 function TopBar() {
   const { dark, setDark } = useTheme();
   return (
     <div className="topbar">
-      <div className="app-title">Kapa-Planung • v7</div>
-      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+      <div className="flex items-center gap-3">
+        <div className="app-title">Smart Waste Forecast</div>
+        <span className="text-xs px-2 py-1 rounded bg-h16b-accent/20 text-h16b-accent font-semibold">v7</span>
+      </div>
+      <div className="flex gap-3 items-center">
         <DBStatusBadge/>
-        <button className="btn" onClick={()=>setDark(!dark)}>{dark ? 'Light' : 'Dark'}</button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setDark(!dark)}
+        >
+          {dark ? '☀️ Light' : '🌙 Dark'}
+        </Button>
       </div>
     </div>
   );
@@ -77,6 +86,7 @@ function TabsNav() {
   );
 }
 
+
 function MonthToolbar() {
   const { pathname } = useLocation();
   const show = useMemo(()=> ['/forecast','/production','/montage','/kpis'].some(p=>pathname.startsWith(p)),[pathname]);
@@ -84,7 +94,7 @@ function MonthToolbar() {
   const setMonth = useUIStore(s=>s.setMonth);
   if (!show) return null;
   const d = new Date(monthStart + 'T00:00:00Z');
-  const label = d.toLocaleString(undefined,{month:'long',year:'numeric'});
+  const label = d.toLocaleString('de-DE',{month:'long',year:'numeric'});
   function addMonths(n:number){
     const nd = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+n, 1));
     setMonth(nd.toISOString().slice(0,10));
@@ -96,13 +106,14 @@ function MonthToolbar() {
   }
   return (
     <div className="subtoolbar">
-      <button className="btn" onClick={()=>addMonths(-1)}>◀ Prev</button>
-      <div style={{minWidth:140,textAlign:'center'}}>{label}</div>
-      <button className="btn" onClick={()=>addMonths(1)}>Next ▶</button>
-      <button className="btn" onClick={setToday}>Heute</button>
+      <Button size="sm" variant="ghost" onClick={()=>addMonths(-1)}>◀ Vorher</Button>
+      <div className="flex-1 text-center font-semibold text-fg-primary">{label}</div>
+      <Button size="sm" variant="ghost" onClick={()=>addMonths(1)}>Nachher ▶</Button>
+      <Button size="sm" variant="primary" onClick={setToday}>Heute</Button>
     </div>
   );
 }
+
 
 export default function AppShell() {
   return (

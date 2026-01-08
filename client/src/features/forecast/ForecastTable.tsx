@@ -1,5 +1,6 @@
 import React from 'react';
 import type { OrderDto } from '../../api/orders';
+import { Table, TableEmpty } from '../../ui/components';
 
 type Props = {
   rows: OrderDto[];
@@ -7,30 +8,44 @@ type Props = {
 };
 
 export default function ForecastTable({ rows, onSelectOrder }: Props) {
+  if (!rows.length) {
+    return <TableEmpty message="Keine Aufträge gefunden" />;
+  }
+
   return (
-    <div style={{overflow:'auto', border:'1px solid var(--border)', borderRadius:8}}>
-      <table style={{width:'100%', borderCollapse:'collapse'}}>
-        <thead style={{position:'sticky', top:0, background:'var(--bg)', zIndex:1}}>
-          <tr>
-            {['Auftrag','Kunde','Forecast','Summe','Status','⚠','km'].map((h)=>(
-              <th key={h} style={{textAlign:'left', padding:'8px 10px', borderBottom:'1px solid var(--border)', fontWeight:600, fontSize:12, color:'var(--muted)'}}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(r=> (
-            <tr key={r.id} style={{cursor:'pointer'}} onClick={()=>onSelectOrder?.(r.id)}>
-              <td style={{padding:'8px 10px', borderBottom:'1px solid var(--border)'}}>{r.id}</td>
-              <td style={{padding:'8px 10px', borderBottom:'1px solid var(--border)'}}>{r.customer ?? ''}</td>
-              <td style={{padding:'8px 10px', borderBottom:'1px solid var(--border)'}}>{r.forecast_date ?? ''}</td>
-              <td style={{padding:'8px 10px', borderBottom:'1px solid var(--border)'}}>{r.sum_total ?? ''}</td>
-              <td style={{padding:'8px 10px', borderBottom:'1px solid var(--border)'}}>{r.status}</td>
-              <td style={{padding:'8px 10px', borderBottom:'1px solid var(--border)', color: r.forecast_miss ? 'var(--warn)' : 'var(--muted)'}}>{r.forecast_miss ? '⚠' : ''}</td>
-              <td style={{padding:'8px 10px', borderBottom:'1px solid var(--border)'}}>{r.distance_km ?? ''}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table
+      data={rows}
+      keyFn={(r) => r.id}
+      columns={[
+        { key: 'id', header: 'Auftrag', width: '80px' },
+        { key: 'customer', header: 'Kunde', render: (v) => v ?? '' },
+        { key: 'forecast_date', header: 'Forecast', render: (v) => v ?? '' },
+        { key: 'sum_total', header: 'Summe', align: 'right', render: (v) => v ?? '' },
+        {
+          key: 'status',
+          header: 'Status',
+          render: (v) => (
+            <span className={`px-2 py-1 rounded text-xs font-medium ${
+              v === 'open' ? 'bg-info/20 text-h16b-accent' :
+              v === 'delivered' ? 'bg-success/20 text-success' :
+              'bg-fg-tertiary/10 text-fg-tertiary'
+            }`}>
+              {v}
+            </span>
+          ),
+        },
+        {
+          key: 'forecast_miss',
+          header: 'Status',
+          render: (v) => v ? <span className="text-warning">⚠ Verzug</span> : '',
+          width: '60px',
+        },
+        { key: 'distance_km', header: 'km', align: 'right', render: (v) => v ?? '' },
+      ]}
+      hover
+      striped
+      clickable={!!onSelectOrder}
+      onSelectOrder={onSelectOrder}
+    />
   );
 }
