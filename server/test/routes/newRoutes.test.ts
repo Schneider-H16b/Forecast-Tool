@@ -1,26 +1,33 @@
 import request from 'supertest';
 import path from 'path';
+import fs from 'fs';
 import { initDB, getDB } from '../../src/db/db';
 import { describe, it, beforeAll, expect } from 'vitest';
 
 let app: any;
+const dbPath = path.join(__dirname, 'tmp-newroutes.db');
 
 describe('New routes', () => {
   beforeAll(async () => {
+    if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
     // Initialize temporary DB with schema
     const schemaPath = path.join(__dirname, '../../../docs/schema.sql');
-    const dbPath = path.join(__dirname, 'tmp-newroutes.db');
     await initDB({ dbPath, schemaPath });
     // Import app after DB init so routes have access to initialized repos
     app = (await import('../../src/app')).default;
   });
 
-  it.skip('GET /api/orders/critical returns open unplanned within range', async () => {
+  it('GET /api/orders/critical returns open unplanned within range', async () => {
     const db = getDB();
     const ordersRepo = db.getOrdersRepo();
+    const iso = (offset: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return d.toISOString().slice(0, 10);
+    };
     await ordersRepo.upsertOrders([
-      { id: 'o1', status: 'open', customer: 'ACME', forecast_date: '2026-02-10', sum_total: 1000 },
-      { id: 'o2', status: 'delivered', customer: 'Done', forecast_date: '2026-02-05', sum_total: 500 },
+      { id: 'o1', status: 'open', customer: 'ACME', forecast_date: iso(7), sum_total: 1000 },
+      { id: 'o2', status: 'delivered', customer: 'Done', forecast_date: iso(20), sum_total: 500 },
     ] as any);
 
     const res = await request(app).get('/api/orders/critical?days=14');
@@ -71,7 +78,7 @@ describe('New routes', () => {
     expect(res.body.length).toBeGreaterThan(0);
   });
 
-  it.skip('POST /api/import/csv-dual imports header + positions csv', async () => {
+  it('POST /api/import/csv-dual imports header + positions csv', async () => {
     const headerCsv = 'AUFTRAGSNUMMER;KUNDENNAME;GESAMTBETRAG;LIEFERDATUM\nA1;Foo GmbH;1000;01.01.2026';
     const positionsCsv = 'AUFTRAGSNUMMER;ARTIKELNUMMER;MENGE;POSITIONSWERT\nA1;SKU1;2;500';
 

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ThreePanelLayout } from '../app/ThreePanelLayout';
 import { useUIStore } from '../store/uiStore';
 import { useOrdersList } from '../hooks/useOrders';
@@ -9,6 +9,7 @@ import { createPlanEvent, deletePlanEvent } from '../api/events';
 import { PlanningInspector } from '../features/planning/PlanningInspector';
 import { EventEditModal } from '../features/planning/EventEditModal';
 import { useCapacityMonth } from '../hooks/useCapacity';
+import { fetchCapacityDay } from '../api/capacityBreakdown';
 
 function monthDays(monthIso: string) {
   const d = new Date(monthIso + 'T00:00:00Z');
@@ -75,6 +76,13 @@ export default function Montage() {
     });
     return map;
   }, [events]);
+
+  const selectedDay = selection.type === 'day' ? selection.date : undefined;
+  const { data: dayCapacity } = useQuery({
+    queryKey: ['capacity','day','montage', selectedDay],
+    enabled: !!selectedDay,
+    queryFn: () => fetchCapacityDay('montage', selectedDay!),
+  });
 
   return (
     <ThreePanelLayout
@@ -161,6 +169,22 @@ export default function Montage() {
             </div>
           ))}
         </div>
+        {selectedDay && dayCapacity && (
+          <div className="kpi-card" style={{ padding: 12, display: 'grid', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong>Kapazität {selectedDay}</strong>
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>Montage</span>
+            </div>
+            {(dayCapacity.employees ?? []).map(emp => (
+              <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{emp.name}</span>
+                <span style={{ fontSize: 12 }}>
+                  frei {Math.max(emp.availableMin - emp.bookedMin, 0)}m / gebucht {emp.bookedMin}m
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       {modal.type === 'assignment' && (
         <AssignmentModal

@@ -8,6 +8,7 @@ import { downloadExportedOrders, type ExportFormat } from '../../api/export';
 
 export default function ForecastSidebar() {
   const f = useUIStore(s=>s.forecast);
+  const currentMonth = useUIStore(s=>s.currentMonth);
   const setF = useUIStore(s=>s.setForecast);
   const toast = useToast();
   const qc = useQueryClient();
@@ -165,11 +166,11 @@ export default function ForecastSidebar() {
           </label>
           <button className="btn" onClick={async ()=>{
             try {
-              const today = new Date();
-              const startDate = today.toISOString().slice(0,10);
-              const end = new Date(); end.setDate(today.getDate()+365);
-              const endDate = end.toISOString().slice(0,10);
-              await downloadExportedOrders(exportFormat, { from: startDate, to: endDate, statuses: f.statuses.length > 0 ? f.statuses : undefined });
+              const from = currentMonth;
+              const d = new Date(currentMonth + 'T00:00:00Z');
+              const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
+              const to = end.toISOString().slice(0,10);
+              await downloadExportedOrders(exportFormat, { from, to, statuses: f.statuses.length > 0 ? f.statuses : undefined });
               toast.success(`Export als ${exportFormat.toUpperCase()} gestartet`);
             } catch(e:any) {
               toast.error(`Export fehlgeschlagen: ${e.message ?? e}`);

@@ -203,11 +203,12 @@ router.post('/csv-dual', async (req, res) => {
         'Auslieferung Lager': 'delivery_date',
         'Monitor': 'status_monitor',
       };
+      const columnMapLower = Object.fromEntries(Object.entries(columnMap).map(([k,v]) => [k.toLowerCase(), v]));
       const rows = lines.slice(1).map((line) => {
         const values = parseCsvLine(line, delim);
         const row: Record<string, string> = {};
         headers.forEach((h: string, i: number) => {
-          const mappedKey = columnMap[h] || h.toLowerCase().replace(/\s+/g, '_');
+          const mappedKey = columnMap[h] || columnMapLower[h.toLowerCase()] || h.toLowerCase().replace(/\s+/g, '_');
           row[mappedKey] = values[i] ? values[i].replace(/^"|"$/g, '').trim() : '';
         });
         return row;
@@ -237,11 +238,12 @@ router.post('/csv-dual', async (req, res) => {
         'Preis': 'unit_price',
         'Lieferdatum': 'delivery_date',
       };
+      const columnMapLower = Object.fromEntries(Object.entries(columnMap).map(([k,v]) => [k.toLowerCase(), v]));
       const rows = lines.slice(1).map((line) => {
         const values = parseCsvLine(line, delim);
         const row: Record<string, string> = {};
         headers.forEach((h: string, i: number) => {
-          const mappedKey = columnMap[h] || h.toLowerCase().replace(/\s+/g, '_');
+          const mappedKey = columnMap[h] || columnMapLower[h.toLowerCase()] || h.toLowerCase().replace(/\s+/g, '_');
           row[mappedKey] = values[i] ? values[i].replace(/^"|"$/g, '').trim() : '';
         });
         return row;

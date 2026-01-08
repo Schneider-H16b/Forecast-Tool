@@ -143,6 +143,7 @@ export default function Sales() {
   const [status, setStatus] = useState<StatusFilter>('open');
   const [onlyDelayed, setOnlyDelayed] = useState(false);
   const [selected, setSelected] = useState<string | undefined>();
+  const [criticalDays, setCriticalDays] = useState(14);
   const [expandedCritical, setExpandedCritical] = useState(false);
 
   const statuses = useMemo(() => status === 'all' ? undefined : [status], [status]);
@@ -155,8 +156,8 @@ export default function Sales() {
     sort: 'forecast:asc',
   });
   const { data: critical = [], isLoading: critLoading, isError: critError } = useQuery({
-    queryKey: ['orders','critical', 14],
-    queryFn: () => fetchCriticalOrders(14),
+    queryKey: ['orders','critical', criticalDays],
+    queryFn: () => fetchCriticalOrders(criticalDays),
   });
 
   const topCritical = critical.slice(0, 5);
@@ -174,7 +175,7 @@ export default function Sales() {
         >
           <div>
             <div style={{ fontWeight: 700 }}>Vertrieb – kritische Aufträge</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Offen, ungeplant, Forecast fehlt/überfällig oder ≤ 14 Tage</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Offen, ungeplant, Forecast fehlt/überfällig oder ≤ {criticalDays} Tage</div>
           </div>
           <div className="badge" title="Anzahl">
             {critLoading ? '…' : critError ? 'Fehler' : critical.length}
@@ -183,6 +184,12 @@ export default function Sales() {
         {expandedCritical && (
           <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
             <h4>Top 5 kritische Aufträge</h4>
+            <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
+              <span>Horizon</span>
+              <select value={criticalDays} onChange={(e)=>setCriticalDays(Number(e.target.value))}>
+                {[7,14,21,30].map(d => <option key={d} value={d}>≤ {d} Tage</option>)}
+              </select>
+            </label>
             {critLoading && <div>Lade…</div>}
             {critError && <div style={{ color: 'var(--warn)' }}>Fehler beim Laden</div>}
             {!critLoading && !critError && topCritical.length === 0 && <div>Keine kritischen Aufträge</div>}
