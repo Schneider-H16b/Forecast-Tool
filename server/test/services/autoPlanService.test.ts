@@ -187,6 +187,7 @@ describe('AutoPlanService', () => {
     expect(result.createdEvents).toBe(1);
     
     const events = await planningRepo.listEvents();
-    expect(events[0].travel_minutes).toBe(100); // 50km * 2
+    // 50km * 2 (roundtrip) / 80 km/h * 60 min/h = 75 minutes
+    expect(events[0].travel_minutes).toBe(75);
   });
 });

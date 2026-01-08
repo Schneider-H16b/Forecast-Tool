@@ -196,6 +196,7 @@ export default function Settings() {
     >
       <div style={{ display: 'grid', gap: 12 }}>
         <ItemsPanel />
+        <TravelSettingsPanel />
         <AppSettingsPanel />
       </div>
     </ThreePanelLayout>
@@ -321,6 +322,73 @@ function AppSettingsPanel() {
       <div style={{ display: 'flex', gap: 8 }}>
         <button className="secondary" onClick={()=>load.mutate()} disabled={load.isPending}>Laden</button>
         <button onClick={()=>save.mutate()} disabled={save.isPending}>Speichern</button>
+      </div>
+    </div>
+  );
+}
+
+function TravelSettingsPanel() {
+  const [travelSpeedKmh, setTravelSpeedKmh] = useState<number | null>(null);
+  const [roundtrip, setRoundtrip] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const speed = await fetchAppSetting<number>('planning.travelSpeedKmh');
+      const rt = await fetchAppSetting<boolean>('planning.roundtrip');
+      setTravelSpeedKmh(speed ?? 80);
+      setRoundtrip(rt ?? true);
+    } catch (e) {
+      toast.error('Fehler beim Laden der Reisezeit-Einstellungen');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSettings = async () => {
+    try {
+      setLoading(true);
+      await setAppSetting('planning.travelSpeedKmh', travelSpeedKmh ?? 80);
+      await setAppSetting('planning.roundtrip', roundtrip ?? true);
+      toast.success('Reisezeit-Einstellungen gespeichert');
+    } catch (e) {
+      toast.error('Fehler beim Speichern');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    loadSettings();
+  }, []);
+
+  return (
+    <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
+      <h3>Reisezeit-Einstellungen</h3>
+      <label>
+        <span>Reisegeschwindigkeit (km/h)</span>
+        <input
+          type="number"
+          min={1}
+          value={travelSpeedKmh ?? 80}
+          onChange={(e) => setTravelSpeedKmh(Number(e.target.value))}
+          disabled={loading}
+        />
+      </label>
+      <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          checked={roundtrip ?? true}
+          onChange={(e) => setRoundtrip(e.target.checked)}
+          disabled={loading}
+        />
+        <span>Hin- und Rückfahrt berechnen</span>
+      </label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button className="secondary" onClick={loadSettings} disabled={loading}>Zurücksetzen</button>
+        <button onClick={saveSettings} disabled={loading}>Speichern</button>
       </div>
     </div>
   );

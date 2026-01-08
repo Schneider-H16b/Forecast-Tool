@@ -40,6 +40,16 @@ export class AutoPlanService {
       return this.buildResult(runId, createdAt, params, createdEvents, skippedOrders, issues);
     }
 
+    // Load travel settings
+    let travelSpeedKmh = 80; // default
+    let roundtrip = true; // default
+    try {
+      const speed = await this.settingsRepo.getAppSetting('planning.travelSpeedKmh');
+      if (typeof speed === 'number' && Number.isFinite(speed)) travelSpeedKmh = speed;
+      const rt = await this.settingsRepo.getAppSetting('planning.roundtrip');
+      if (typeof rt === 'boolean') roundtrip = rt;
+    } catch { /* ignore */ }
+
     // Get orders that need planning
     const orders = await this.ordersRepo.listOrders();
     const unplannedOrders = orders.filter(o => this.needsPlanning(o, params));
@@ -55,7 +65,7 @@ export class AutoPlanService {
         }
 
         if (params.includeMontage !== false) {
-          await this.planMontageEvent(order, employees, params, runId, issues);
+          await this.planMontageEvent(order, employees, params, runId, issues, travelSpeedKmh, roundtrip);
           createdEvents++;
         }
       } catch (error) {
@@ -136,7 +146,9 @@ export class AutoPlanService {
     employees: Employee[],
     params: AutoPlanParams,
     runId: string,
-    issues: AutoPlanIssue[]
+    issues: AutoPlanIssue[],
+    travelSpeedKmh: number,
+    roundtrip: boolean
   ): Promise<void> {
     if (!order.total_mont_min || order.total_mont_min === 0) {
       return;
@@ -166,8 +178,12 @@ export class AutoPlanService {
       montageDate.setDate(montageDate.getDate() + 1);
     }
 
-    // Calculate travel time based on distance
-    const travelMinutes = order.distance_km ? Math.ceil(order.distance_km * 2) : 0;
+    // Calculate travel time based on distance, speed, and roundtrip setting
+    let travelMinutes = 0;
+    if (order.distance_km && order.distance_km > 0) {
+      const distanceForCalc = roundtrip ? order.distance_km * 2 : order.distance_km;
+      travelMinutes = Math.ceil((distanceForCalc / travelSpeedKmh) * 60);
+    }
 
     // Assign available employees
     const availableEmployees = employees.filter(e => !e.isArchived).slice(0, 2);
