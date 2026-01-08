@@ -37,4 +37,26 @@ describe('SettingsRepoSqlite', () => {
 
     adapter2.close();
   });
+
+  it('returns structured defaults and applies patches', async () => {
+    const schema = fs.readFileSync(path.join(__dirname, '../../..', 'docs', 'schema.sql'), 'utf8');
+    const adapter = new SqliteAdapter(DB_PATH);
+    await adapter.init(schema);
+    const repo = new SettingsRepoSqlite(adapter);
+
+    const global = await repo.getGlobalSettings();
+    expect(global.dayMinutes).toBeGreaterThan(0);
+    const patched = await repo.setGlobalSettings({ dayMinutes: 510, travelKmh: 70, travelRoundTrip: false });
+    expect(patched.dayMinutes).toBe(510);
+    expect(patched.travelKmh).toBe(70);
+    expect(patched.travelRoundTrip).toBe(false);
+
+    const auto = await repo.getAutoPlanSettings();
+    expect(auto.maxEmployeesPerOrder).toBeGreaterThan(0);
+    const autoPatched = await repo.setAutoPlanSettings({ maxEmployeesPerOrder: 4, tolPerDayMin: 10 });
+    expect(autoPatched.maxEmployeesPerOrder).toBe(4);
+    expect(autoPatched.tolPerDayMin).toBe(10);
+
+    adapter.close();
+  });
 });

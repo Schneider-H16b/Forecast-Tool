@@ -88,4 +88,24 @@ describe('New routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.imported).toBe(1);
   });
+
+  it('supports typed settings endpoints', async () => {
+    const globalRes = await request(app).get('/api/settings/global');
+    expect(globalRes.status).toBe(200);
+    expect(globalRes.body.dayMinutes).toBeGreaterThan(0);
+
+    const updatedGlobal = await request(app)
+      .put('/api/settings/global')
+      .send({ travelKmh: 90, travelRoundTrip: false });
+    expect(updatedGlobal.status).toBe(200);
+    expect(updatedGlobal.body.travelKmh).toBe(90);
+    expect(updatedGlobal.body.travelRoundTrip).toBe(false);
+
+    const updatedAuto = await request(app)
+      .put('/api/settings/autoplan')
+      .send({ maxEmployeesPerOrder: 4, tolPerDayMin: 15 });
+    expect(updatedAuto.status).toBe(200);
+    expect(updatedAuto.body.maxEmployeesPerOrder).toBe(4);
+    expect(updatedAuto.body.tolPerDayMin).toBe(15);
+  });
 });

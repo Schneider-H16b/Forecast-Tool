@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { OrdersRepo } from '../repos/interfaces/OrdersRepo';
-import type { SettingsRepo } from '../repos/interfaces/SettingsRepo';
+import type { SettingsRepo, AutoPlanSettings, GlobalSettings } from '../repos/interfaces/SettingsRepo';
 import type { PlanningRepo } from '../repos/interfaces/PlanningRepo';
 import type { Order, Employee, AutoPlanRun, AutoPlanIssue } from '../types';
 
@@ -33,22 +33,15 @@ export class AutoPlanService {
     let createdEvents = 0;
     let skippedOrders = 0;
 
+    const globalSettings = await this.settingsRepo.getGlobalSettings();
+    const autoSettings = await this.settingsRepo.getAutoPlanSettings();
+
     // Get all employees
-    const employees = await this.settingsRepo.listEmployees();
+    const employees = (await this.settingsRepo.listEmployees()).filter(e => (e as any).active !== false);
     if (employees.length === 0) {
       issues.push(this.createIssue(runId, 'no_employees', undefined, undefined));
       return this.buildResult(runId, createdAt, params, createdEvents, skippedOrders, issues);
     }
-
-    // Load travel settings
-    let travelSpeedKmh = 80; // default
-    let roundtrip = true; // default
-    try {
-      const speed = await this.settingsRepo.getAppSetting('planning.travelSpeedKmh');
-      if (typeof speed === 'number' && Number.isFinite(speed)) travelSpeedKmh = speed;
-      const rt = await this.settingsRepo.getAppSetting('planning.roundtrip');
-      if (typeof rt === 'boolean') roundtrip = rt;
-    } catch { /* ignore */ }
 
     // Get orders that need planning
     const orders = await this.ordersRepo.listOrders();
@@ -60,12 +53,12 @@ export class AutoPlanService {
     for (const order of unplannedOrders) {
       try {
         if (params.includeProduction !== false) {
-          await this.planProductionEvent(order, employees, params, runId, issues);
+          await this.planProductionEvent(order, employees, params, runId, issues, autoSettings);
           createdEvents++;
         }
 
         if (params.includeMontage !== false) {
-          await this.planMontageEvent(order, employees, params, runId, issues, travelSpeedKmh, roundtrip);
+          await this.planMontageEvent(order, employees, params, runId, issues, globalSettings, autoSettings);
           createdEvents++;
         }
       } catch (error) {
@@ -96,21 +89,23 @@ export class AutoPlanService {
     employees: Employee[],
     params: AutoPlanParams,
     runId: string,
-    issues: AutoPlanIssue[]
+    issues: AutoPlanIssue[],
+    autoSettings: AutoPlanSettings
   ): Promise<void> {
     if (!order.total_prod_min || order.total_prod_min === 0) {
       return;
     }
 
-    // Calculate production date (1 week before delivery for now)
+    // Calculate production date based on lookahead
     const deliveryDate = new Date(order.delivery_date!);
     const productionDate = new Date(deliveryDate);
-    productionDate.setDate(productionDate.getDate() - 7);
+    const lookahead = autoSettings.autoPlanProductionLookaheadDays ?? 7;
+    productionDate.setDate(productionDate.getDate() - lookahead);
     const productionDateStr = productionDate.toISOString().split('T')[0];
 
     // Check capacity
-    const capacity = await this.planningRepo.getRemainingCapacity('production', productionDateStr);
-    if (capacity < order.total_prod_min) {
+    const productionCapacity = await this.planningRepo.getRemainingCapacity('production', productionDateStr);
+    if (productionCapacity + autoSettings.tolPerDayMin < order.total_prod_min) {
       issues.push(
         this.createIssue(
           runId,
@@ -118,16 +113,13 @@ export class AutoPlanService {
           order.id,
           productionDateStr,
           undefined,
-          order.total_prod_min - capacity
+          order.total_prod_min - productionCapacity
         )
       );
-      
-      // Try next day
-      productionDate.setDate(productionDate.getDate() + 1);
     }
 
     // Assign available employees
-    const availableEmployees = employees.filter(e => !e.isArchived).slice(0, 2);
+    const availableEmployees = employees.slice(0, Math.max(1, autoSettings.maxEmployeesPerOrder));
 
     await this.planningRepo.createEvent({
       kind: 'production',
@@ -147,8 +139,8 @@ export class AutoPlanService {
     params: AutoPlanParams,
     runId: string,
     issues: AutoPlanIssue[],
-    travelSpeedKmh: number,
-    roundtrip: boolean
+    globalSettings: GlobalSettings,
+    autoSettings: AutoPlanSettings
   ): Promise<void> {
     if (!order.total_mont_min || order.total_mont_min === 0) {
       return;
@@ -161,8 +153,19 @@ export class AutoPlanService {
     const montageDateStr = montageDate.toISOString().split('T')[0];
 
     // Check capacity
-    const capacity = await this.planningRepo.getRemainingCapacity('montage', montageDateStr);
-    if (capacity < order.total_mont_min) {
+    const found = await this.findSlotWithCapacity(
+      'montage',
+      order.total_mont_min,
+      montageDate,
+      autoSettings.autoPlanMontageSlipBackDays,
+      autoSettings.autoPlanMontageSlipFwdDays,
+      autoSettings.tolPerDayMin
+    );
+    let targetDateIso = montageDateStr;
+    if (found) {
+      targetDateIso = found.dateIso;
+    } else {
+      const capacity = await this.planningRepo.getRemainingCapacity('montage', montageDateStr);
       issues.push(
         this.createIssue(
           runId,
@@ -173,31 +176,58 @@ export class AutoPlanService {
           order.total_mont_min - capacity
         )
       );
-      
-      // Try delivery day
-      montageDate.setDate(montageDate.getDate() + 1);
     }
 
     // Calculate travel time based on distance, speed, and roundtrip setting
     let travelMinutes = 0;
     if (order.distance_km && order.distance_km > 0) {
-      const distanceForCalc = roundtrip ? order.distance_km * 2 : order.distance_km;
-      travelMinutes = Math.ceil((distanceForCalc / travelSpeedKmh) * 60);
+      const distanceForCalc = globalSettings.travelRoundTrip ? order.distance_km * 2 : order.distance_km;
+      travelMinutes = Math.ceil((distanceForCalc / globalSettings.travelKmh) * 60);
     }
 
     // Assign available employees
-    const availableEmployees = employees.filter(e => !e.isArchived).slice(0, 2);
+    const availableEmployees = employees.slice(0, Math.max(1, autoSettings.maxEmployeesPerOrder));
 
     await this.planningRepo.createEvent({
       kind: 'montage',
       orderId: order.id,
-      startDate: montageDateStr,
-      endDate: montageDateStr,
+      startDate: targetDateIso,
+      endDate: targetDateIso,
       totalMinutes: order.total_mont_min,
       travelMinutes,
       employeeIds: availableEmployees.map(e => e.id),
       source: 'autoplan',
     });
+  }
+
+  private async findSlotWithCapacity(
+    kind: 'production' | 'montage',
+    requiredMinutes: number,
+    baseDate: Date,
+    maxBack: number,
+    maxForward: number,
+    tolerance: number
+  ) {
+    const candidates: Date[] = [];
+    for (let i = 0; i <= maxBack; i++) {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() - i);
+      candidates.push(d);
+    }
+    for (let i = 1; i <= maxForward; i++) {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + i);
+      candidates.push(d);
+    }
+
+    for (const cand of candidates) {
+      const iso = cand.toISOString().split('T')[0];
+      const remaining = await this.planningRepo.getRemainingCapacity(kind, iso);
+      if (remaining + tolerance >= requiredMinutes) {
+        return { dateIso: iso, remaining };
+      }
+    }
+    return null;
   }
 
   private createIssue(

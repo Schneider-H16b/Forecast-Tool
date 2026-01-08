@@ -27,6 +27,8 @@ describe('AutoPlanService', () => {
       name: 'Jane Smith',
       isArchived: false,
     });
+
+    await settingsRepo.setGlobalSettings({ travelKmh: 80, travelRoundTrip: true });
   });
 
   it('should create production and montage events for an order', async () => {
