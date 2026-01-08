@@ -12,10 +12,10 @@ export interface OrderDto {
   miss_days?: number;
 }
 
-export async function fetchOrders(params: { from: string; to: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; sort?: string }) {
+export async function fetchOrders(params: { from?: string; to?: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; sort?: string }) {
   const q = new URLSearchParams();
-  q.set('from', params.from);
-  q.set('to', params.to);
+  if (params.from) q.set('from', params.from);
+  if (params.to) q.set('to', params.to);
   if (params.search) q.set('search', params.search);
   if (params.statuses && params.statuses.length) q.set('statuses', params.statuses.join(','));
   if (params.onlyDelayed) q.set('onlyDelayed', '1');

@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchOrders, type OrderDto } from '../api/orders';
 
-function monthToRange(monthIso: string) {
+function monthToRange(monthIso?: string) {
+  if (!monthIso) return { from: undefined as string|undefined, to: undefined as string|undefined };
   const d = new Date(monthIso + 'T00:00:00Z');
   const from = monthIso;
   const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
@@ -9,7 +10,7 @@ function monthToRange(monthIso: string) {
   return { from, to };
 }
 
-export function useOrdersList({ monthIso, search, statuses, onlyDelayed, onlyUnplanned, sort }:{ monthIso: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; sort?: string }) {
+export function useOrdersList({ monthIso, search, statuses, onlyDelayed, onlyUnplanned, sort }:{ monthIso?: string; search?: string; statuses?: string[]; onlyDelayed?: boolean; onlyUnplanned?: boolean; sort?: string }) {
   const { from, to } = monthToRange(monthIso);
   return useQuery<{ data: OrderDto[] }, Error, OrderDto[]>({
     queryKey: ['orders','list', { from, to, search, statuses, onlyDelayed, onlyUnplanned, sort }],

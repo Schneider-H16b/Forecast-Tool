@@ -77,11 +77,11 @@ export class OrdersRepoSqlite implements OrdersRepo {
       params.push(...statuses);
     }
     if (filter?.from) {
-      sql += ' AND forecast_date >= ?';
+      sql += ' AND (forecast_date IS NULL OR forecast_date >= ?)';
       params.push(filter.from);
     }
     if (filter?.to) {
-      sql += ' AND forecast_date <= ?';
+      sql += ' AND (forecast_date IS NULL OR forecast_date <= ?)';
       params.push(filter.to);
     }
     if (filter?.onlyDelayed) {

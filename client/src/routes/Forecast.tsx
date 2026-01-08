@@ -18,7 +18,7 @@ export default function Forecast() {
   const f = useUIStore(s=>s.forecast);
   const sortParam = `${f.sort.key === 'forecast' ? 'forecast' : f.sort.key}:${f.sort.dir}`;
   const { data: orders = [], isLoading, isError } = useOrdersList({
-    monthIso: month,
+    monthIso: undefined, // default: no date filter to show all orders
     search: f.search,
     statuses: f.statuses,
     onlyDelayed: f.onlyDelayed,

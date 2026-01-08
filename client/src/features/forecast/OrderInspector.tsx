@@ -6,32 +6,41 @@ import { patchOrderMeta } from '../../api/orders';
 import { runAutoPlan } from '../../api/autoplan';
 
 export default function OrderInspector({ orderId }: { orderId?: string }) {
-  if (!orderId) return <div><em>Kein Auftrag ausgewählt</em></div>;
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['order','detail', orderId],
-    queryFn: () => fetchOrderDetail(orderId),
-  });
-  if (isLoading) return <div>Lade Auftrag…</div>;
-  if (isError || !data) return <div>Fehler beim Laden</div>;
-  const { order, events } = data;
-  const prod = events.filter(e=>e.kind==='production');
-  const mont = events.filter(e=>e.kind==='montage');
+  const hasOrder = Boolean(orderId);
+  
+  // All hooks must be called before any conditional returns
   const openModal = useUIStore(s=>s.openModal);
   const currentMonth = useUIStore(s=>s.currentMonth);
   const qc = useQueryClient();
   const [editingDist, setEditingDist] = useState(false);
-  const [distValue, setDistValue] = useState<number>(order.distance_km ?? 0);
+  const [distValue, setDistValue] = useState<number>(0);
+  
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['order','detail', orderId],
+    queryFn: () => fetchOrderDetail(orderId as string),
+    enabled: hasOrder,
+  });
+
+  // Update distValue when order data changes
+  React.useEffect(() => {
+    if (data?.order) {
+      setDistValue(data.order.distance_km ?? 0);
+    }
+  }, [data?.order?.distance_km]);
+
   const mutateMeta = useMutation({
-    mutationFn: (v: number)=>patchOrderMeta(order.id, { distanceKm: v }),
+    mutationFn: (v: number)=>patchOrderMeta(orderId as string, { distanceKm: v }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['order','detail', orderId] });
       await qc.invalidateQueries({ queryKey: ['orders','list'] });
       setEditingDist(false);
     }
   });
+  
   const autoPlan = useMutation({
     mutationFn: async () => {
-      const rangeStart = order.forecast_date ?? currentMonth;
+      if (!data?.order) return null;
+      const rangeStart = data.order.forecast_date ?? currentMonth;
       const d = new Date(rangeStart + 'T00:00:00Z');
       const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0,10);
       return runAutoPlan({
@@ -43,15 +52,25 @@ export default function OrderInspector({ orderId }: { orderId?: string }) {
       });
     },
     onSuccess: async (result) => {
-      // show result modal
+      if (!result || !data?.order) return;
       useUIStore.getState().openModal({ type: 'autoplanResult', result });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['events','month'] }),
         qc.invalidateQueries({ queryKey: ['orders','list'] }),
-        qc.invalidateQueries({ queryKey: ['order','detail', order.id] }),
+        qc.invalidateQueries({ queryKey: ['order','detail', data.order.id] }),
       ]);
     },
   });
+
+  // Now safe to do conditional returns after all hooks
+  if (!hasOrder) return <div><em>Kein Auftrag ausgewählt</em></div>;
+  if (isLoading) return <div>Lade Auftrag…</div>;
+  if (isError || !data) return <div>Fehler beim Laden</div>;
+  
+  const { order, events } = data;
+  const prod = events.filter(e=>e.kind==='production');
+  const mont = events.filter(e=>e.kind==='montage');
+  
   return (
     <div style={{display:'grid', gap:12}}>
       <section>
