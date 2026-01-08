@@ -4,6 +4,7 @@ import { useUIStore } from '../../store/uiStore';
 import { importCsv, importDualCsv } from '../../api/import';
 import { useToast } from '../../store/toastStore';
 import { runAutoPlan } from '../../api/autoplan';
+import { downloadExportedOrders, type ExportFormat } from '../../api/export';
 
 export default function ForecastSidebar() {
   const f = useUIStore(s=>s.forecast);
@@ -15,6 +16,7 @@ export default function ForecastSidebar() {
   const positionsInputRef = useRef<HTMLInputElement>(null);
   const [headerCsvText, setHeaderCsvText] = useState<string | undefined>(undefined);
   const [positionsCsvText, setPositionsCsvText] = useState<string | undefined>(undefined);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
 
   const importMutation = useMutation({
     mutationFn: async (payload: { csvText?: string; headerCsvText?: string; positionsCsvText?: string }) => {
@@ -152,6 +154,28 @@ export default function ForecastSidebar() {
             toast.error(`AutoPlan fehlgeschlagen: ${e.message ?? e}`);
           }
         }}>AutoPlan (alle)</button>
+        <div style={{height:6}}/>
+        <div style={{ display: 'grid', gap: 6 }}>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 12 }}>Format:</span>
+            <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value as ExportFormat)} style={{ flex: 1 }}>
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </label>
+          <button className="btn" onClick={async ()=>{
+            try {
+              const today = new Date();
+              const startDate = today.toISOString().slice(0,10);
+              const end = new Date(); end.setDate(today.getDate()+365);
+              const endDate = end.toISOString().slice(0,10);
+              await downloadExportedOrders(exportFormat, { from: startDate, to: endDate, statuses: f.statuses.length > 0 ? f.statuses : undefined });
+              toast.success(`Export als ${exportFormat.toUpperCase()} gestartet`);
+            } catch(e:any) {
+              toast.error(`Export fehlgeschlagen: ${e.message ?? e}`);
+            }
+          }}>Orders exportieren</button>
+        </div>
         <div style={{height:6}}/>
         <button className="btn" onClick={()=>{ const base = (window as any).__API_BASE__ || ''; window.open(`${base}/api/db/export`, '_blank'); }}>DB exportieren</button>
       </div>
