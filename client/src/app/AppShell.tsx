@@ -72,6 +72,7 @@ const tabs = [
   { to: '/montage', label: 'Montage' },
   { to: '/sales', label: 'Vertrieb' },
   { to: '/kpis', label: 'KPIs' },
+  { to: '/bi', label: 'BI' },
   { to: '/settings', label: 'Settings' },
 ];
 
@@ -90,7 +91,7 @@ function TabsNav() {
 
 function MonthToolbar() {
   const { pathname } = useLocation();
-  const show = useMemo(()=> ['/forecast','/production','/montage','/kpis'].some(p=>pathname.startsWith(p)),[pathname]);
+  const show = useMemo(()=> ['/forecast','/production','/montage','/kpis','/bi'].some(p=>pathname.startsWith(p)),[pathname]);
   const monthStart = useUIStore(s=>s.currentMonth);
   const setMonth = useUIStore(s=>s.setMonth);
   if (!show) return null;

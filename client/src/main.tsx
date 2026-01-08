@@ -8,6 +8,7 @@ import Production from './routes/Production';
 import Montage from './routes/Montage';
 import Sales from './routes/Sales';
 import KPIs from './routes/KPIs';
+import BI from './routes/BI';
 import Settings from './routes/Settings';
 import './theme.css';
 
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
       { path: '/montage', element: <Montage /> },
       { path: '/sales', element: <Sales /> },
       { path: '/kpis', element: <KPIs /> },
+      { path: '/bi', element: <BI /> },
       { path: '/settings', element: <Settings /> },
     ],
   },

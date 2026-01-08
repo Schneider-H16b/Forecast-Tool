@@ -10,12 +10,20 @@
     "lint": "eslint src/**/*.{ts,tsx,js,jsx} --ext .ts,.tsx,.js,.jsx"
   },
   "dependencies": {
+    "@nivo/bar": "^0.99.0",
+    "@nivo/bullet": "^0.99.0",
+    "@nivo/core": "^0.99.0",
+    "@nivo/line": "^0.99.0",
+    "@nivo/pie": "^0.99.0",
+    "@nivo/treemap": "^0.99.0",
+    "@tanstack/react-query": "^4.36.1",
+    "@types/react-grid-layout": "^1.3.6",
+    "classnames": "^2.5.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-grid-layout": "^2.2.2",
     "react-router-dom": "^6.22.3",
-    "@tanstack/react-query": "^4.36.1",
-    "zustand": "^4.5.2",
-    "classnames": "^2.5.1"
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.0.0",
