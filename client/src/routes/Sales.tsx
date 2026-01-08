@@ -143,6 +143,7 @@ export default function Sales() {
   const [status, setStatus] = useState<StatusFilter>('open');
   const [onlyDelayed, setOnlyDelayed] = useState(false);
   const [selected, setSelected] = useState<string | undefined>();
+  const [expandedCritical, setExpandedCritical] = useState(false);
 
   const statuses = useMemo(() => status === 'all' ? undefined : [status], [status]);
   const { data: orders = [], isLoading, isError } = useOrdersList({
@@ -158,13 +159,19 @@ export default function Sales() {
     queryFn: () => fetchCriticalOrders(14),
   });
 
+  const topCritical = critical.slice(0, 5);
+
   return (
     <ThreePanelLayout
       sidebar={<SalesFilters search={search} setSearch={setSearch} status={status} setStatus={setStatus} onlyDelayed={onlyDelayed} setOnlyDelayed={setOnlyDelayed} />}
       inspector={<SalesInspector orderId={selected} />}
     >
       <div style={{ display: 'grid', gap: 12 }}>
-        <div className="kpi-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button
+          className="kpi-card"
+          onClick={() => setExpandedCritical(!expandedCritical)}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+        >
           <div>
             <div style={{ fontWeight: 700 }}>Vertrieb – kritische Aufträge</div>
             <div style={{ fontSize: 12, color: 'var(--muted)' }}>Offen, ungeplant, Forecast fehlt/überfällig oder ≤ 14 Tage</div>
@@ -172,7 +179,29 @@ export default function Sales() {
           <div className="badge" title="Anzahl">
             {critLoading ? '…' : critError ? 'Fehler' : critical.length}
           </div>
-        </div>
+        </button>
+        {expandedCritical && (
+          <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
+            <h4>Top 5 kritische Aufträge</h4>
+            {critLoading && <div>Lade…</div>}
+            {critError && <div style={{ color: 'var(--warn)' }}>Fehler beim Laden</div>}
+            {!critLoading && !critError && topCritical.length === 0 && <div>Keine kritischen Aufträge</div>}
+            {!critLoading && !critError && topCritical.map((o) => (
+              <button
+                key={o.id}
+                className="ghost-row"
+                onClick={() => { setSelected(o.id); setExpandedCritical(false); }}
+                style={{ textAlign: 'left', padding: '8px 0', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600 }}>{o.customer ?? 'Unbekannt'} (#{o.ext_id ?? o.id})</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>Forecast: {o.forecast_date ?? 'Fehlt'}</div>
+                </div>
+                <span style={{ fontSize: 12 }}>{o.sum_total ? (o.sum_total / 1000).toFixed(1) + 'k' : '–'}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {isLoading && <div className="kpi-card">Lade Orders…</div>}
         {isError && <div className="kpi-card" style={{ borderColor: 'var(--warn)' }}>Fehler beim Laden</div>}
         {!isLoading && !isError && (
