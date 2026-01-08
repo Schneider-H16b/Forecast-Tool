@@ -191,86 +191,96 @@ function AutoPlanSettingsPanel() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Fehler beim Speichern'),
   });
 
-  if (isLoading) return <div className="badge">Lade…</div>;
-  if (isError) return <div className="badge">Fehler beim Laden</div>;
+  if (isLoading) return <Badge variant="info">Lade…</Badge>;
+  if (isError) return <Badge variant="error">Fehler beim Laden</Badge>;
 
   return (
-    <div className="kpi-card" style={{ display: 'grid', gap: 12, padding: 12 }}>
-      <h3>AutoPlan</h3>
-      <div style={{ display: 'grid', gap: 10 }}>
-        <label>
-          <span>Toleranz pro Tag (Minuten)</span>
+    <Card>
+      <CardHeader>
+        <h3 style={{ margin: 0 }}>AutoPlan Einstellungen</h3>
+      </CardHeader>
+      <CardBody className="flex flex-col gap-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Toleranz pro Tag (Minuten)</span>
           <input
             type="number"
             min={0}
             max={240}
             value={form?.tolPerDayMin ?? 60}
             onChange={(e) => setForm(f => f ? { ...f, tolPerDayMin: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label>
-          <span>Max. Mitarbeiter pro Auftrag</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Max. Mitarbeiter pro Auftrag</span>
           <input
             type="number"
             min={1}
             max={8}
             value={form?.maxEmployeesPerOrder ?? 3}
             onChange={(e) => setForm(f => f ? { ...f, maxEmployeesPerOrder: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label>
-          <span>Weiche Konfliktgrenze (Minuten)</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Weiche Konfliktgrenze (Minuten)</span>
           <input
             type="number"
             min={0}
             max={960}
             value={form?.softConflictLimitMin ?? 120}
             onChange={(e) => setForm(f => f ? { ...f, softConflictLimitMin: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label>
-          <span>Montage rückwärts schieben (Tage)</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Montage rückwärts schieben (Tage)</span>
           <input
             type="number"
             min={0}
             max={60}
             value={form?.autoPlanMontageSlipBackDays ?? 5}
             onChange={(e) => setForm(f => f ? { ...f, autoPlanMontageSlipBackDays: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label>
-          <span>Montage vorwärts schieben (Tage)</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Montage vorwärts schieben (Tage)</span>
           <input
             type="number"
             min={0}
             max={60}
             value={form?.autoPlanMontageSlipFwdDays ?? 5}
             onChange={(e) => setForm(f => f ? { ...f, autoPlanMontageSlipFwdDays: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label>
-          <span>Production Lookahead (Tage)</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Production Lookahead (Tage)</span>
           <input
             type="number"
             min={1}
             max={365}
             value={form?.autoPlanProductionLookaheadDays ?? 30}
             onChange={(e) => setForm(f => f ? { ...f, autoPlanProductionLookaheadDays: Number(e.target.value) } : null)}
+            className="px-3 py-2 rounded border border-gray-300"
           />
         </label>
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <label className="flex gap-3 items-center">
           <input
             type="checkbox"
             checked={form?.respectOvernightBarriers ?? true}
             onChange={(e) => setForm(f => f ? { ...f, respectOvernightBarriers: e.target.checked } : null)}
           />
-          <span>Übernachtungs-Blocker beachten</span>
+          <span className="text-sm">Übernachtungs-Blocker beachten</span>
         </label>
-      </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button onClick={() => save.mutate()} disabled={save.isPending || !form}>Speichern</button>
-      </div>
-    </div>
+        <div className="flex gap-3 justify-end pt-2">
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !form}>
+            Speichern
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -314,57 +324,73 @@ function ItemsPanel() {
   const sortedItems = useMemo(() => [...items].sort((a, b) => a.sku.localeCompare(b.sku)), [items]);
 
   return (
-    <div style={{ display: 'grid', gap: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3>Artikel</h3>
-        <button className="btn" onClick={() => setEditing({ sku: '', name: '', prodMinPerUnit: 0, montMinPerUnit: 0, active: true })}>Neu</button>
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-center">
+        <h3 style={{ margin: 0 }}>Artikel</h3>
+        <Button onClick={() => setEditing({ sku: '', name: '', prodMinPerUnit: 0, montMinPerUnit: 0, active: true })}>
+          Neu
+        </Button>
       </div>
-      {isLoading && <div className="badge">Lade…</div>}
-      {isError && <div className="badge">Fehler beim Laden</div>}
-      <div style={{ display: 'grid', gap: 8 }}>
+      {isLoading && <Badge variant="info">Lade…</Badge>}
+      {isError && <Badge variant="error">Fehler beim Laden</Badge>}
+      <div className="flex flex-col gap-3">
         {sortedItems.map(it => (
-          <button key={it.sku} className="kpi-card" style={{ textAlign: 'left' }} onClick={() => setEditing(it)}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{it.sku} • {it.name ?? '-'}</span>
-              <span>{it.active ? 'aktiv' : 'inaktiv'}</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Prod/Mon: {it.prodMinPerUnit ?? 0} / {it.montMinPerUnit ?? 0} min/Unit</div>
-          </button>
+          <Card key={it.sku} className="cursor-pointer hover:bg-gray-50" onClick={() => setEditing(it)}>
+            <CardBody>
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium">{it.sku} • {it.name ?? '-'}</div>
+                  <div className="text-xs text-gray-500 mt-1">Prod/Mon: {it.prodMinPerUnit ?? 0} / {it.montMinPerUnit ?? 0} min/Unit</div>
+                </div>
+                <Badge variant={it.active ? 'info' : 'warning'}>
+                  {it.active ? 'aktiv' : 'inaktiv'}
+                </Badge>
+              </div>
+            </CardBody>
+          </Card>
         ))}
       </div>
       {editing && (
-        <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
-          <h4>{items.find(i=>i.sku===editing.sku)?'Bearbeiten':'Neu anlegen'}</h4>
-          <label>
-            <span>SKU</span>
-            <input value={editing.sku} onChange={(e)=>setEditing({ ...editing, sku: e.target.value })} />
-          </label>
-          <label>
-            <span>Name</span>
-            <input value={editing.name ?? ''} onChange={(e)=>setEditing({ ...editing, name: e.target.value })} />
-          </label>
-          <label>
-            <span>Prod min/Unit</span>
-            <input type="number" min={0} value={editing.prodMinPerUnit ?? 0} onChange={(e)=>setEditing({ ...editing, prodMinPerUnit: Number(e.target.value) })} />
-          </label>
-          <label>
-            <span>Mont min/Unit</span>
-            <input type="number" min={0} value={editing.montMinPerUnit ?? 0} onChange={(e)=>setEditing({ ...editing, montMinPerUnit: Number(e.target.value) })} />
-          </label>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="checkbox" checked={editing.active ?? true} onChange={(e)=>setEditing({ ...editing, active: e.target.checked })} />
-            <span>Aktiv</span>
-          </label>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
-            {editing.sku && items.some(i => i.sku === editing.sku) && (
-              <button className="secondary" onClick={() => remove.mutate(editing.sku)} disabled={remove.isPending}>Löschen</button>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-              <button className="secondary" onClick={()=>setEditing(null)} disabled={save.isPending}>Abbrechen</button>
-              <button onClick={()=>save.mutate()} disabled={save.isPending || !editing.sku}>Speichern</button>
+        <Card>
+          <CardHeader>
+            <h4 style={{ margin: 0 }}>{items.find(i=>i.sku===editing.sku)?'Bearbeiten':'Neu anlegen'}</h4>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">SKU</span>
+              <input value={editing.sku} onChange={(e)=>setEditing({ ...editing, sku: e.target.value })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Name</span>
+              <input value={editing.name ?? ''} onChange={(e)=>setEditing({ ...editing, name: e.target.value })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Prod min/Unit</span>
+              <input type="number" min={0} value={editing.prodMinPerUnit ?? 0} onChange={(e)=>setEditing({ ...editing, prodMinPerUnit: Number(e.target.value) })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Mont min/Unit</span>
+              <input type="number" min={0} value={editing.montMinPerUnit ?? 0} onChange={(e)=>setEditing({ ...editing, montMinPerUnit: Number(e.target.value) })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <label className="flex gap-3 items-center">
+              <input type="checkbox" checked={editing.active ?? true} onChange={(e)=>setEditing({ ...editing, active: e.target.checked })} />
+              <span className="text-sm">Aktiv</span>
+            </label>
+            <div className="flex gap-3 justify-end pt-2">
+              {editing.sku && items.some(i => i.sku === editing.sku) && (
+                <Button variant="danger" onClick={() => remove.mutate(editing.sku)} disabled={remove.isPending}>
+                  Löschen
+                </Button>
+              )}
+              <Button variant="ghost" onClick={()=>setEditing(null)} disabled={save.isPending}>
+                Abbrechen
+              </Button>
+              <Button onClick={()=>save.mutate()} disabled={save.isPending || !editing.sku}>
+                Speichern
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       )}
     </div>
   );
@@ -404,79 +430,95 @@ function EmployeesPanel() {
   const sortedEmployees = useMemo(() => [...employees].sort((a, b) => a.name.localeCompare(b.name)), [employees]);
 
   return (
-    <div style={{ display: 'grid', gap: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3>Mitarbeiter</h3>
-        <button className="btn" onClick={() => setEditing({ id: '', name: '', role: 'montage', weeklyHours: 40, daysMask: 0b1111100, active: true })}>Neu</button>
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-center">
+        <h3 style={{ margin: 0 }}>Mitarbeiter</h3>
+        <Button onClick={() => setEditing({ id: '', name: '', role: 'montage', weeklyHours: 40, daysMask: 0b1111100, active: true })}>
+          Neu
+        </Button>
       </div>
-      {isLoading && <div className="badge">Lade…</div>}
-      {isError && <div className="badge">Fehler beim Laden</div>}
-      <div style={{ display: 'grid', gap: 8 }}>
+      {isLoading && <Badge variant="info">Lade…</Badge>}
+      {isError && <Badge variant="error">Fehler beim Laden</Badge>}
+      <div className="flex flex-col gap-3">
         {sortedEmployees.map(e => (
-          <button key={e.id} className="kpi-card" style={{ textAlign: 'left' }} onClick={() => setEditing(e)}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{e.name} ({e.role})</span>
-              <span>{e.active ? 'aktiv' : 'inaktiv'}</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Wochenstunden: {e.weeklyHours}</div>
-          </button>
+          <Card key={e.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setEditing(e)}>
+            <CardBody>
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium">{e.name} ({e.role})</div>
+                  <div className="text-xs text-gray-500 mt-1">Wochenstunden: {e.weeklyHours}</div>
+                </div>
+                <Badge variant={e.active ? 'info' : 'warning'}>
+                  {e.active ? 'aktiv' : 'inaktiv'}
+                </Badge>
+              </div>
+            </CardBody>
+          </Card>
         ))}
       </div>
       {editing && (
-        <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
-          <h4>{editing.id ? 'Bearbeiten' : 'Neu anlegen'}</h4>
-          <label>
-            <span>Name</span>
-            <input value={editing.name} onChange={(e)=>setEditing({ ...editing, name: e.target.value })} />
-          </label>
-          <label>
-            <span>Rolle</span>
-            <select value={editing.role} onChange={(e)=>setEditing({ ...editing, role: e.target.value })}>
-              <option value="production">production</option>
-              <option value="montage">montage</option>
-              <option value="other">other</option>
-            </select>
-          </label>
-          <label>
-            <span>Wochenstunden</span>
-            <input type="number" min={0} max={80} value={editing.weeklyHours} onChange={(e)=>setEditing({ ...editing, weeklyHours: Number(e.target.value) })} />
-          </label>
-          <div>
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Arbeitstage</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {['Mo','Di','Mi','Do','Fr','Sa','So'].map((label, idx) => {
-                const bit = 1 << idx;
-                const checked = (editing.daysMask & bit) === bit;
-                return (
-                  <label key={label} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => {
-                        const newMask = checked ? (editing.daysMask & ~bit) : (editing.daysMask | bit);
-                        setEditing({ ...editing, daysMask: newMask });
-                      }}
-                    />
-                    <span>{label}</span>
-                  </label>
-                );
-              })}
+        <Card>
+          <CardHeader>
+            <h4 style={{ margin: 0 }}>{editing.id ? 'Bearbeiten' : 'Neu anlegen'}</h4>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Name</span>
+              <input value={editing.name} onChange={(e)=>setEditing({ ...editing, name: e.target.value })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Rolle</span>
+              <select value={editing.role} onChange={(e)=>setEditing({ ...editing, role: e.target.value })} className="px-3 py-2 rounded border border-gray-300">
+                <option value="production">production</option>
+                <option value="montage">montage</option>
+                <option value="other">other</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Wochenstunden</span>
+              <input type="number" min={0} max={80} value={editing.weeklyHours} onChange={(e)=>setEditing({ ...editing, weeklyHours: Number(e.target.value) })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Arbeitstage</span>
+              <div className="flex gap-3 flex-wrap">
+                {['Mo','Di','Mi','Do','Fr','Sa','So'].map((label, idx) => {
+                  const bit = 1 << idx;
+                  const checked = (editing.daysMask & bit) === bit;
+                  return (
+                    <label key={label} className="flex gap-2 items-center">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const newMask = checked ? (editing.daysMask & ~bit) : (editing.daysMask | bit);
+                          setEditing({ ...editing, daysMask: newMask });
+                        }}
+                      />
+                      <span className="text-sm">{label}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="checkbox" checked={editing.active} onChange={(e)=>setEditing({ ...editing, active: e.target.checked })} />
-            <span>Aktiv</span>
-          </label>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
-            {editing.id && employees.some(e => e.id === editing.id) && (
-              <button className="secondary" onClick={() => remove.mutate(editing.id)} disabled={remove.isPending}>Löschen</button>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-              <button className="secondary" onClick={()=>setEditing(null)} disabled={save.isPending}>Abbrechen</button>
-              <button onClick={()=>save.mutate()} disabled={save.isPending}>Speichern</button>
+            <label className="flex gap-3 items-center">
+              <input type="checkbox" checked={editing.active} onChange={(e)=>setEditing({ ...editing, active: e.target.checked })} />
+              <span className="text-sm">Aktiv</span>
+            </label>
+            <div className="flex gap-3 justify-end pt-2">
+              {editing.id && employees.some(e => e.id === editing.id) && (
+                <Button variant="danger" onClick={() => remove.mutate(editing.id)} disabled={remove.isPending}>
+                  Löschen
+                </Button>
+              )}
+              <Button variant="ghost" onClick={()=>setEditing(null)} disabled={save.isPending}>
+                Abbrechen
+              </Button>
+              <Button onClick={()=>save.mutate()} disabled={save.isPending}>
+                Speichern
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       )}
     </div>
   );
@@ -518,73 +560,93 @@ function BlockersPanel() {
   const filtered = useMemo(() => blockers, [blockers]);
 
   return (
-    <div style={{ display: 'grid', gap: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3>Blocker</h3>
-        <button className="btn" onClick={()=>setEditing({ id: crypto.randomUUID(), employeeId: '', dateIso: '', overnight: false, reason: '' })}>Neu</button>
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-center">
+        <h3 style={{ margin: 0 }}>Blocker</h3>
+        <Button onClick={()=>setEditing({ id: crypto.randomUUID(), employeeId: '', dateIso: '', overnight: false, reason: '' })}>
+          Neu
+        </Button>
       </div>
-      <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>Filter Mitarbeiter</span>
-            <select value={employeeFilter} onChange={(e)=>setEmployeeFilter(e.target.value)}>
-              <option value="">Alle</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>
-              ))}
-            </select>
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>Monat</span>
-            <input type="month" value={monthIso} onChange={(e)=>setMonthIso(e.target.value)} />
-          </label>
-        </div>
-      </div>
-      {isLoading && <div className="badge">Lade…</div>}
-      {isError && <div className="badge">Fehler beim Laden</div>}
-      <div style={{ display: 'grid', gap: 8 }}>
-        {filtered.map(b => (
-          <div key={b.id} className="kpi-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-            <div>
-              <div style={{ fontWeight: 600 }}>{b.dateIso} • {employees.find(e=>e.id===b.employeeId)?.name ?? b.employeeId}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>{b.reason ?? ''}</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="secondary" onClick={()=>setEditing(b)}>Bearbeiten</button>
-              <button onClick={()=>remove.mutate(b.id)} disabled={remove.isPending}>Löschen</button>
-            </div>
+      <Card>
+        <CardBody className="flex flex-col gap-4">
+          <div className="flex gap-6 flex-wrap">
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Filter Mitarbeiter</span>
+              <select value={employeeFilter} onChange={(e)=>setEmployeeFilter(e.target.value)} className="px-3 py-2 rounded border border-gray-300">
+                <option value="">Alle</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Monat</span>
+              <input type="month" value={monthIso} onChange={(e)=>setMonthIso(e.target.value)} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
           </div>
+        </CardBody>
+      </Card>
+      {isLoading && <Badge variant="info">Lade…</Badge>}
+      {isError && <Badge variant="error">Fehler beim Laden</Badge>}
+      <div className="flex flex-col gap-3">
+        {filtered.map(b => (
+          <Card key={b.id}>
+            <CardBody>
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium">{b.dateIso} • {employees.find(e=>e.id===b.employeeId)?.name ?? b.employeeId}</div>
+                  <div className="text-xs text-gray-500 mt-1">{b.reason ?? '-'}</div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={()=>setEditing(b)}>
+                    Bearbeiten
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={()=>remove.mutate(b.id)} disabled={remove.isPending}>
+                    Löschen
+                  </Button>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
         ))}
       </div>
       {editing && (
-        <div className="kpi-card" style={{ display: 'grid', gap: 8, padding: 12 }}>
-          <h4>{blockers.find(b=>b.id===editing.id)?'Bearbeiten':'Neu'}</h4>
-          <label>
-            <span>Mitarbeiter</span>
-            <select value={editing.employeeId} onChange={(e)=>setEditing({ ...editing, employeeId: e.target.value })}>
-              <option value="">Bitte wählen…</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Datum</span>
-            <input type="date" value={editing.dateIso} onChange={(e)=>setEditing({ ...editing, dateIso: e.target.value })} />
-          </label>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="checkbox" checked={editing.overnight} onChange={(e)=>setEditing({ ...editing, overnight: e.target.checked })} />
-            <span>Übernachtung</span>
-          </label>
-          <label>
-            <span>Grund</span>
-            <input value={editing.reason ?? ''} onChange={(e)=>setEditing({ ...editing, reason: e.target.value })} />
-          </label>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button className="secondary" onClick={()=>setEditing(null)} disabled={save.isPending}>Abbrechen</button>
-            <button onClick={()=>save.mutate()} disabled={save.isPending || !editing.employeeId || !editing.dateIso}>Speichern</button>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <h4 style={{ margin: 0 }}>{blockers.find(b=>b.id===editing.id)?'Bearbeiten':'Neu'}</h4>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Mitarbeiter</span>
+              <select value={editing.employeeId} onChange={(e)=>setEditing({ ...editing, employeeId: e.target.value })} className="px-3 py-2 rounded border border-gray-300">
+                <option value="">Bitte wählen…</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Datum</span>
+              <input type="date" value={editing.dateIso} onChange={(e)=>setEditing({ ...editing, dateIso: e.target.value })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <label className="flex gap-3 items-center">
+              <input type="checkbox" checked={editing.overnight} onChange={(e)=>setEditing({ ...editing, overnight: e.target.checked })} />
+              <span className="text-sm">Übernachtung</span>
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Grund</span>
+              <input value={editing.reason ?? ''} onChange={(e)=>setEditing({ ...editing, reason: e.target.value })} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <div className="flex gap-3 justify-end pt-2">
+              <Button variant="ghost" onClick={()=>setEditing(null)} disabled={save.isPending}>
+                Abbrechen
+              </Button>
+              <Button onClick={()=>save.mutate()} disabled={save.isPending || !editing.employeeId || !editing.dateIso}>
+                Speichern
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
       )}
     </div>
   );

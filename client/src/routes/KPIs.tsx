@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ThreePanelLayout } from '../app/ThreePanelLayout';
-import { KPICard, DashboardGrid, Card, CardHeader, CardBody } from '../ui/components';
+import { KPICard, DashboardGrid, Card, CardHeader, CardBody, Button } from '../ui/components';
 import { useUIStore } from '../store/uiStore';
 import { useDashboardMetrics } from '../hooks/useDashboard';
 
@@ -123,22 +123,28 @@ export default function KPIs() {
   return (
     <ThreePanelLayout
       sidebar={(
-        <div style={{ display: 'grid', gap: 12 }}>
-          <h3>Zeitraum</h3>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>Von</span>
-            <input type="date" value={from} onChange={(e)=>setFrom(e.target.value)} />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span>Bis</span>
-            <input type="date" value={to} onChange={(e)=>setTo(e.target.value)} />
-          </label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="secondary" onClick={() => { const r = monthRange(monthStart); setFrom(r.from); setTo(r.to); }}>Aktueller Monat</button>
-            <button className="secondary" onClick={() => { const now = new Date(); const past = new Date(now); past.setUTCDate(now.getUTCDate() - 29); setFrom(toISO(past)); setTo(toISO(now)); }}>Letzte 30 Tage</button>
-          </div>
-          <button onClick={() => refetch()}>Aktualisieren</button>
-        </div>
+        <Card>
+          <CardBody className="flex flex-col gap-4">
+            <h3 style={{ margin: 0, marginBottom: 4 }}>Zeitraum</h3>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Von</span>
+              <input type="date" value={from} onChange={(e)=>setFrom(e.target.value)} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Bis</span>
+              <input type="date" value={to} onChange={(e)=>setTo(e.target.value)} className="px-3 py-2 rounded border border-gray-300" />
+            </label>
+            <div className="flex gap-3 flex-wrap">
+              <Button variant="secondary" onClick={() => { const r = monthRange(monthStart); setFrom(r.from); setTo(r.to); }}>
+                Aktueller Monat
+              </Button>
+              <Button variant="secondary" onClick={() => { const now = new Date(); const past = new Date(now); past.setUTCDate(now.getUTCDate() - 29); setFrom(toISO(past)); setTo(toISO(now)); }}>
+                Letzte 30 Tage
+              </Button>
+            </div>
+            <Button onClick={() => refetch()}>Aktualisieren</Button>
+          </CardBody>
+        </Card>
       )}
       inspector={<Drilldown metrics={data?.metrics} />}
     >
